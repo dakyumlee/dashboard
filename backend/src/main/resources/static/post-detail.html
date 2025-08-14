@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>게시글 상세 - 커뮤니티</title>
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/pages.css">
-    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <header class="header">
@@ -32,7 +28,7 @@
     </header>
 
     <main class="main-content">
-        <div class="post-detail-container">
+        <div class="container">
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>게시글을 불러오는 중...</p>
@@ -40,13 +36,13 @@
 
             <div class="error-banner hidden" id="error-banner">
                 <p id="error-message"></p>
-                <button class="btn btn-sm btn-primary" id="retry-btn">다시 시도</button>
+                <a href="index.html" class="btn btn-sm btn-primary">목록으로</a>
             </div>
 
             <div class="post-detail hidden" id="post-detail">
-                <div class="post-detail-header">
-                    <h1 class="post-detail-title" id="post-title"></h1>
-                    <div class="post-detail-meta">
+                <div class="post-header">
+                    <h1 class="post-title" id="post-title"></h1>
+                    <div class="post-meta">
                         <div class="post-author-info">
                             <span class="author-nickname" id="post-author"></span>
                             <span class="post-date" id="post-date"></span>
@@ -58,7 +54,7 @@
                     </div>
                 </div>
 
-                <div class="post-detail-content" id="post-content"></div>
+                <div class="post-content" id="post-content"></div>
 
                 <div class="post-actions">
                     <button class="like-btn" id="like-btn">
@@ -96,12 +92,6 @@
                 </div>
 
                 <div class="comments-list" id="comments-list"></div>
-
-                <div class="comment-pagination hidden" id="comment-pagination">
-                    <button class="btn btn-outline btn-sm" id="load-more-comments">
-                        더 보기
-                    </button>
-                </div>
             </div>
         </div>
     </main>
@@ -122,17 +112,151 @@
         </div>
     </div>
 
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/validation.js"></script>
-    <script src="js/utils/auth.js"></script>
-    <script src="js/api/apiClient.js"></script>
-    <script src="js/api/postAPI.js"></script>
-    <script src="js/api/commentAPI.js"></script>
-    <script src="js/components/header.js"></script>
-    <script src="js/components/modal.js"></script>
-    <script src="js/components/commentList.js"></script>
-    <script src="js/pages/postDetail.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        let currentUser = null;
+        let currentPost = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initPostDetail();
+        });
+
+        function initPostDetail() {
+            checkAuthStatus();
+            loadPost();
+            setupEventListeners();
+        }
+
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                currentUser = {
+                    id: payload.sub,
+                    nickname: payload.nickname,
+                    role: payload.role
+                };
+                updateNavigation(true);
+            } else {
+                updateNavigation(false);
+            }
+        }
+
+        function updateNavigation(isLoggedIn) {
+            const navGuest = document.getElementById('nav-guest');
+            const navUser = document.getElementById('nav-user');
+            const adminLink = document.getElementById('admin-link');
+
+            if (isLoggedIn) {
+                navGuest.classList.add('hidden');
+                navUser.classList.remove('hidden');
+                document.getElementById('user-nickname').textContent = currentUser.nickname;
+                
+                if (currentUser.role === 'ADMIN') {
+                    adminLink.classList.remove('hidden');
+                }
+            } else {
+                navGuest.classList.remove('hidden');
+                navUser.classList.add('hidden');
+            }
+        }
+
+        async function loadPost() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('id');
+
+            if (!postId) {
+                showError('게시글을 찾을 수 없습니다.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('게시글을 불러올 수 없습니다.');
+                }
+
+                currentPost = await response.json();
+                displayPost(currentPost);
+                checkPostOwnership();
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function displayPost(post) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('post-detail').classList.remove('hidden');
+
+            document.getElementById('post-title').textContent = post.title;
+            document.getElementById('post-author').textContent = post.authorNickname;
+            document.getElementById('post-date').textContent = new Date(post.createdAt).toLocaleDateString('ko-KR');
+            document.getElementById('post-content').textContent = post.content;
+            document.getElementById('like-count').textContent = post.likeCount || 0;
+        }
+
+        function checkPostOwnership() {
+            if (currentUser && currentPost && currentUser.id == currentPost.authorId) {
+                const ownerActions = document.getElementById('post-owner-actions');
+                ownerActions.classList.remove('hidden');
+
+                const editBtn = document.getElementById('edit-btn');
+                editBtn.href = `edit-post.html?id=${currentPost.id}`;
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            document.getElementById('delete-btn').addEventListener('click', showDeleteModal);
+            document.getElementById('delete-cancel-btn').addEventListener('click', hideDeleteModal);
+            document.getElementById('delete-confirm-btn').addEventListener('click', deletePost);
+        }
+
+        function showDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        async function deletePost() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${currentPost.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('게시글 삭제에 실패했습니다.');
+                }
+
+                alert('게시글이 삭제되었습니다.');
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-banner').classList.remove('hidden');
+            document.getElementById('error-message').textContent = message;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+    </script>
 </body>
 </html>
