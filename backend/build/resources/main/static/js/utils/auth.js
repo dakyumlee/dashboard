@@ -1,56 +1,63 @@
 const Auth = {
-    TOKEN_KEY: 'community_token',
-    USER_KEY: 'community_user',
-
-    setToken(token) {
-        localStorage.setItem(this.TOKEN_KEY, token);
-    },
-
-    getToken() {
-        return localStorage.getItem(this.TOKEN_KEY);
-    },
-
-    setUser(user) {
-        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-    },
-
     getCurrentUser() {
-        const userString = localStorage.getItem(this.USER_KEY);
-        return userString ? JSON.parse(userString) : null;
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token) return null;
+            
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const now = Math.floor(Date.now() / 1000);
+            
+            if (payload.exp < now) {
+                this.logout();
+                return null;
+            }
+            
+            return {
+                id: payload.userId,
+                email: payload.sub,
+                nickname: payload.nickname,
+                isAdmin: payload.isAdmin || false
+            };
+        } catch (error) {
+            console.error('토큰 파싱 오류:', error);
+            this.logout();
+            return null;
+        }
     },
 
-    isAuthenticated() {
-        return !!this.getToken();
-    },
-
-    login(token, user) {
-        this.setToken(token);
-        this.setUser(user);
-    },
-
-    logout() {
-        localStorage.removeItem(this.TOKEN_KEY);
-        localStorage.removeItem(this.USER_KEY);
+    isLoggedIn() {
+        return this.getCurrentUser() !== null;
     },
 
     requireAuth() {
-        if (!this.isAuthenticated()) {
-            window.location.href = '/login.html';
+        if (!this.isLoggedIn()) {
+            alert('로그인이 필요합니다');
+            window.location.href = 'login.html';
             return false;
         }
         return true;
     },
 
-    redirectIfAuthenticated() {
-        if (this.isAuthenticated()) {
-            window.location.href = '/';
-            return true;
+    requireAdminAuth() {
+        if (!this.requireAuth()) {
+            return false;
         }
-        return false;
+        
+        const user = this.getCurrentUser();
+        if (!user.isAdmin) {
+            alert('관리자 권한이 필요합니다');
+            window.location.href = 'index.html';
+            return false;
+        }
+        return true;
     },
 
-    getAuthHeaders() {
-        const token = this.getToken();
-        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    logout() {
+        localStorage.removeItem('authToken');
+        window.location.href = 'index.html';
+    },
+
+    updateHeaderUI() {
+        updateHeaderUI();
     }
 };

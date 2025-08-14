@@ -1,37 +1,6 @@
 function initHeader() {
-    updateHeaderAuth();
-    setupHeaderEventListeners();
-}
-
-function updateHeaderAuth() {
-    const navGuest = document.getElementById('nav-guest');
-    const navUser = document.getElementById('nav-user');
-    const userNickname = document.getElementById('user-nickname');
-    const adminLink = document.getElementById('admin-link');
-
-    if (Auth.isAuthenticated()) {
-        const user = Auth.getCurrentUser();
-        
-        if (navGuest) hideElement(navGuest);
-        if (navUser) showElement(navUser);
-        
-        if (userNickname && user) {
-            userNickname.textContent = user.nickname || user.email;
-        }
-        
-        if (adminLink && user && user.isAdmin) {
-            showElement(adminLink);
-        } else if (adminLink) {
-            hideElement(adminLink);
-        }
-    } else {
-        if (navGuest) showElement(navGuest);
-        if (navUser) hideElement(navUser);
-        if (adminLink) hideElement(adminLink);
-    }
-}
-
-function setupHeaderEventListeners() {
+    updateHeaderUI();
+    
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
@@ -40,11 +9,46 @@ function setupHeaderEventListeners() {
 
 function handleLogout(e) {
     e.preventDefault();
-    Auth.logout();
-    showToast(MESSAGES.LOGOUT_SUCCESS, 'success');
-    updateHeaderAuth();
     
-    if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
-        window.location.href = '/';
+    if (confirm('로그아웃 하시겠습니까?')) {
+        Auth.logout();
+        window.location.href = 'index.html';
     }
+}
+
+function updateHeaderUI() {
+    const navGuest = document.getElementById('nav-guest');
+    const navUser = document.getElementById('nav-user');
+    const userNickname = document.getElementById('user-nickname');
+    const adminLink = document.getElementById('admin-link');
+    
+    const currentUser = Auth.getCurrentUser();
+    
+    if (currentUser) {
+        hideElement(navGuest);
+        showElement(navUser);
+        
+        if (userNickname) {
+            userNickname.textContent = currentUser.nickname;
+        }
+        
+        if (adminLink) {
+            if (currentUser.isAdmin) {
+                adminLink.classList.remove('hidden');
+            } else {
+                adminLink.classList.add('hidden');
+            }
+        }
+    } else {
+        showElement(navGuest);
+        hideElement(navUser);
+        
+        if (adminLink) {
+            adminLink.classList.add('hidden');
+        }
+    }
+}
+
+function updateHeaderForUser(user) {
+    updateHeaderUI();
 }

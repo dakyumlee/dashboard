@@ -20,6 +20,7 @@
                 <div class="nav-user hidden" id="nav-user">
                     <span class="user-nickname" id="user-nickname"></span>
                     <a href="create-post.html" class="btn btn-primary btn-sm">글쓰기</a>
+                    <a href="admin.html" class="btn btn-secondary btn-sm hidden" id="admin-link">관리자</a>
                     <button class="btn btn-outline btn-sm" id="logout-btn">로그아웃</button>
                 </div>
             </nav>
@@ -74,7 +75,20 @@
 
             getCurrentUser() {
                 const userString = localStorage.getItem(this.USER_KEY);
-                return userString ? JSON.parse(userString) : null;
+                if (!userString) return null;
+                
+                const user = JSON.parse(userString);
+                const token = localStorage.getItem(this.TOKEN_KEY);
+                if (token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        user.isAdmin = payload.isAdmin || false;
+                    } catch (e) {
+                        user.isAdmin = false;
+                    }
+                }
+                
+                return user;
             },
 
             isAuthenticated() {
@@ -91,6 +105,7 @@
             const navGuest = document.getElementById('nav-guest');
             const navUser = document.getElementById('nav-user');
             const userNickname = document.getElementById('user-nickname');
+            const adminLink = document.getElementById('admin-link');
 
             if (Auth.isAuthenticated()) {
                 const user = Auth.getCurrentUser();
@@ -101,9 +116,18 @@
                 if (userNickname && user) {
                     userNickname.textContent = user.nickname || user.email;
                 }
+                
+                if (adminLink) {
+                    if (user && user.isAdmin) {
+                        adminLink.classList.remove('hidden');
+                    } else {
+                        adminLink.classList.add('hidden');
+                    }
+                }
             } else {
                 showElement(navGuest);
                 hideElement(navUser);
+                if (adminLink) adminLink.classList.add('hidden');
             }
         }
 
