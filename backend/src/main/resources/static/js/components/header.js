@@ -1,6 +1,37 @@
 function initHeader() {
-    Auth.updateHeaderUI();
-    
+    updateHeaderAuth();
+    setupHeaderEventListeners();
+}
+
+function updateHeaderAuth() {
+    const navGuest = document.getElementById('nav-guest');
+    const navUser = document.getElementById('nav-user');
+    const userNickname = document.getElementById('user-nickname');
+    const adminLink = document.getElementById('admin-link');
+
+    if (Auth.isAuthenticated()) {
+        const user = Auth.getCurrentUser();
+        
+        if (navGuest) hideElement(navGuest);
+        if (navUser) showElement(navUser);
+        
+        if (userNickname && user) {
+            userNickname.textContent = user.nickname || user.email;
+        }
+        
+        if (adminLink && user && user.isAdmin) {
+            showElement(adminLink);
+        } else if (adminLink) {
+            hideElement(adminLink);
+        }
+    } else {
+        if (navGuest) showElement(navGuest);
+        if (navUser) hideElement(navUser);
+        if (adminLink) hideElement(adminLink);
+    }
+}
+
+function setupHeaderEventListeners() {
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
@@ -9,31 +40,11 @@ function initHeader() {
 
 function handleLogout(e) {
     e.preventDefault();
+    Auth.logout();
+    showToast(MESSAGES.LOGOUT_SUCCESS, 'success');
+    updateHeaderAuth();
     
-    if (confirm('로그아웃 하시겠습니까?')) {
-        AuthAPI.logout();
-    }
-}
-
-function updateHeaderForUser(user) {
-    const navGuest = document.getElementById('nav-guest');
-    const navUser = document.getElementById('nav-user');
-    const userNickname = document.getElementById('user-nickname');
-    const adminLink = document.getElementById('admin-link');
-
-    if (user) {
-        hideElement(navGuest);
-        showElement(navUser);
-        
-        if (userNickname) {
-            userNickname.textContent = user.nickname;
-        }
-        
-        if (adminLink) {
-            toggleElement(adminLink, user.isAdmin);
-        }
-    } else {
-        showElement(navGuest);
-        hideElement(navUser);
+    if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+        window.location.href = '/';
     }
 }

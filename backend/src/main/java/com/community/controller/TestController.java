@@ -14,8 +14,8 @@ public class TestController {
     @GetMapping("/hello")
     public ResponseEntity<Map<String, String>> hello() {
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Hello from Spring Boot!");
-        response.put("status", "OK");
+        response.put("message", "Hello World!");
+        response.put("status", "success");
         return ResponseEntity.ok(response);
     }
 

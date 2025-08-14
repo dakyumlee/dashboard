@@ -10,41 +10,69 @@ function hideElement(element) {
     }
 }
 
-function setLoading(button, loading = true) {
-    if (!button) return;
+function formatDateTime(dateString) {
+    if (!dateString) return '';
     
-    if (loading) {
-        button.disabled = true;
-        button.dataset.originalText = button.textContent;
-        button.textContent = '처리 중...';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now - date;
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+        return date.toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } else if (diffInDays === 1) {
+        return '어제';
+    } else if (diffInDays < 7) {
+        return `${diffInDays}일 전`;
     } else {
-        button.disabled = false;
-        button.textContent = button.dataset.originalText || button.textContent;
+        return date.toLocaleDateString('ko-KR');
     }
 }
 
-function showNotification(message, type = 'info') {
-    alert(message);
+function truncateText(text, maxLength) {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
 }
 
-function clearFormErrors(form) {
-    const errorElements = form.querySelectorAll('.error-message');
-    errorElements.forEach(element => {
-        element.classList.add('hidden');
-        element.textContent = '';
-    });
+function getURLParams() {
+    const params = {};
+    const urlParams = new URLSearchParams(window.location.search);
+    for (const [key, value] of urlParams) {
+        params[key] = value;
+    }
+    return params;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
     
-    const inputElements = form.querySelectorAll('.form-control');
-    inputElements.forEach(element => element.classList.remove('error'));
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
 }
 
-function addInputError(input, message) {
-    input.classList.add('error');
-    const errorElement = document.getElementById(`${input.name}-error`);
-    if (errorElement) {
-        errorElement.textContent = message;
-        errorElement.classList.remove('hidden');
-    }
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
-
-console.log('Helpers loaded');

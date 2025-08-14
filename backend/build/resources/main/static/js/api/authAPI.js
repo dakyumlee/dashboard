@@ -1,15 +1,21 @@
 const AuthAPI = {
     async register(userData) {
-        try {
-            console.log('Sending register request:', userData);
-            const response = await APIClient.post(ENDPOINTS.AUTH.REGISTER, userData);
-            console.log('Register response:', response);
-            return response;
-        } catch (error) {
-            console.error('Register API error:', error);
-            throw error;
-        }
+        return await apiClient.post('/auth/register', userData);
+    },
+
+    async login(credentials) {
+        return await apiClient.post('/auth/login', credentials);
+    },
+
+    async getCurrentUser() {
+        return await apiClient.get('/auth/me');
+    },
+
+    async logout() {
+        return await apiClient.post('/auth/logout');
+    },
+
+    async refreshToken() {
+        return await apiClient.post('/auth/refresh');
     }
 };
-
-console.log('AuthAPI loaded');

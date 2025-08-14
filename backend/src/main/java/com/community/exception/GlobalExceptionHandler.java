@@ -46,9 +46,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception e) {
+        System.err.println("=== Exception Details ===");
+        System.err.println("Exception type: " + e.getClass().getSimpleName());
+        System.err.println("Exception message: " + e.getMessage());
+        e.printStackTrace();
+        System.err.println("========================");
+        
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "서버 내부 오류가 발생했습니다",
+                "서버 내부 오류: " + e.getClass().getSimpleName() + " - " + e.getMessage(),
                 LocalDateTime.now()
         );
         return ResponseEntity.internalServerError().body(error);
@@ -103,36 +109,13 @@ public class GlobalExceptionHandler {
             this.timestamp = timestamp;
         }
 
-        public int getStatus() {
-            return status;
-        }
-
-        public void setStatus(int status) {
-            this.status = status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
-        public Map<String, String> getErrors() {
-            return errors;
-        }
-
-        public void setErrors(Map<String, String> errors) {
-            this.errors = errors;
-        }
-
-        public LocalDateTime getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(LocalDateTime timestamp) {
-            this.timestamp = timestamp;
-        }
+        public int getStatus() { return status; }
+        public void setStatus(int status) { this.status = status; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+        public Map<String, String> getErrors() { return errors; }
+        public void setErrors(Map<String, String> errors) { this.errors = errors; }
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     }
 }

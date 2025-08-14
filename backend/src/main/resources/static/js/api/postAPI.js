@@ -1,67 +1,41 @@
 const PostAPI = {
-    async getPosts(page = 1, size = 10) {
-        try {
-            const response = await APIClient.get(ENDPOINTS.POSTS.LIST, {
-                page: page,
-                size: size
-            });
-            return response;
-        } catch (error) {
-            throw error;
-        }
+    async getPosts(page = 1, size = PAGINATION.DEFAULT_SIZE) {
+        return await apiClient.get('/posts', { page, size });
     },
 
     async getPost(id) {
-        try {
-            const response = await APIClient.get(`${ENDPOINTS.POSTS.DETAIL}/${id}`);
-            return response;
-        } catch (error) {
-            throw error;
-        }
+        return await apiClient.get(`/posts/${id}`);
     },
 
     async createPost(postData) {
-        try {
-            const response = await APIClient.post(ENDPOINTS.POSTS.CREATE, postData);
-            return response;
-        } catch (error) {
-            throw error;
-        }
+        return await apiClient.post('/posts', postData);
     },
 
     async updatePost(id, postData) {
-        try {
-            const response = await APIClient.put(`${ENDPOINTS.POSTS.UPDATE}/${id}`, postData);
-            return response;
-        } catch (error) {
-            throw error;
-        }
+        return await apiClient.put(`/posts/${id}`, postData);
     },
 
     async deletePost(id) {
-        try {
-            const response = await APIClient.delete(`${ENDPOINTS.POSTS.DELETE}/${id}`);
-            return response;
-        } catch (error) {
-            throw error;
-        }
+        return await apiClient.delete(`/posts/${id}`);
     },
 
-    async toggleLike(postId) {
-        try {
-            const response = await APIClient.post(`${ENDPOINTS.POSTS.LIKE}/${postId}/like`);
-            return response;
-        } catch (error) {
-            throw error;
-        }
+    async toggleLike(id) {
+        return await apiClient.post(`/posts/${id}/like`);
     },
 
-    async getLikeStatus(postId) {
-        try {
-            const response = await APIClient.get(`${ENDPOINTS.POSTS.LIKE}/${postId}/like-status`);
-            return response;
-        } catch (error) {
-            throw error;
-        }
+    async getComments(postId, page = 1, size = PAGINATION.DEFAULT_SIZE) {
+        return await apiClient.get(`/posts/${postId}/comments`, { page, size });
+    },
+
+    async createComment(postId, commentData) {
+        return await apiClient.post(`/posts/${postId}/comments`, commentData);
+    },
+
+    async updateComment(postId, commentId, commentData) {
+        return await apiClient.put(`/posts/${postId}/comments/${commentId}`, commentData);
+    },
+
+    async deleteComment(postId, commentId) {
+        return await apiClient.delete(`/posts/${postId}/comments/${commentId}`);
     }
 };

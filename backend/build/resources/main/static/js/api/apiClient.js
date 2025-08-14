@@ -1,45 +1,77 @@
-const APIClient = {
-    async post(endpoint, data = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        console.log('API Request:', url, data);
-        
+class APIClient {
+    constructor(baseURL = API_BASE_URL) {
+        this.baseURL = baseURL;
+    }
+
+    async request(endpoint, options = {}) {
+        const url = `${this.baseURL}${endpoint}`;
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+            ...Auth.getAuthHeaders()
+        };
+
+        const config = {
+            headers: { ...defaultHeaders, ...options.headers },
+            ...options
+        };
+
+        if (config.body && typeof config.body === 'object') {
+            config.body = JSON.stringify(config.body);
+        }
+
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
+            const response = await fetch(url, config);
             
-            console.log('API Response status:', response.status);
-            
-            if (!response.ok) {
-                let errorData = {};
-                try {
-                    errorData = await response.json();
-                } catch (e) {
-                    console.error('Error parsing error response:', e);
-                }
-                
-                const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
-                error.status = response.status;
-                error.data = errorData;
-                throw error;
+            if (response.status === 401) {
+                Auth.logout();
+                window.location.href = '/login.html';
+                throw new Error('인증이 필요합니다.');
             }
 
-            const responseData = await response.json();
-            console.log('API Response data:', responseData);
-            return responseData;
-            
-        } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const errorMessage = errorData?.message || `HTTP ${response.status}`;
+                throw new Error(errorMessage);
             }
-            console.error('API Client error:', error);
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            }
+            
+            return await response.text();
+
+        } catch (error) {
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error(MESSAGES.NETWORK_ERROR);
+            }
             throw error;
         }
     }
-};
 
-console.log('APIClient loaded');
+    async get(endpoint, params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+        return this.request(url, { method: 'GET' });
+    }
+
+    async post(endpoint, data = {}) {
+        return this.request(endpoint, {
+            method: 'POST',
+            body: data
+        });
+    }
+
+    async put(endpoint, data = {}) {
+        return this.request(endpoint, {
+            method: 'PUT',
+            body: data
+        });
+    }
+
+    async delete(endpoint) {
+        return this.request(endpoint, { method: 'DELETE' });
+    }
+}
+
+const apiClient = new APIClient();
