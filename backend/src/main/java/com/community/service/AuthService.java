@@ -57,12 +57,17 @@ public class AuthService {
     }
 
     public UserResponse register(RegisterRequest request) {
+        logger.debug("회원가입 시도 - 이메일: {}", request.getEmail());
+        
         if (userRepository.existsByEmail(request.getEmail())) {
+            logger.warn("이미 가입된 이메일 - 이메일: {}", request.getEmail());
             throw new CustomException("이미 가입된 이메일입니다");
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         String nickname = nicknameGenerator.generateNickname(request.getDepartment());
+
+        logger.debug("닉네임 생성 완료: {}", nickname);
 
         User user = new User(
                 request.getEmail(),
@@ -72,16 +77,22 @@ public class AuthService {
                 nickname
         );
 
-        User savedUser = userRepository.save(user);
+        try {
+            User savedUser = userRepository.save(user);
+            logger.debug("사용자 저장 완료 - ID: {}", savedUser.getId());
 
-        return new UserResponse(
-                savedUser.getId(),
-                savedUser.getEmail(),
-                savedUser.getNickname(),
-                savedUser.getDepartment(),
-                savedUser.getJobPosition(),
-                savedUser.getIsAdmin()
-        );
+            return new UserResponse(
+                    savedUser.getId(),
+                    savedUser.getEmail(),
+                    savedUser.getNickname(),
+                    savedUser.getDepartment(),
+                    savedUser.getJobPosition(),
+                    savedUser.getIsAdmin()
+            );
+        } catch (Exception e) {
+            logger.error("회원가입 실패: {}", e.getMessage(), e);
+            throw new CustomException("회원가입 중 오류가 발생했습니다");
+        }
     }
 
     @Transactional(readOnly = true)

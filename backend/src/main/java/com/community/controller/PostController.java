@@ -13,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
+@CrossOrigin(origins = "*")
 public class PostController {
 
     private final PostService postService;
@@ -26,6 +27,9 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostDetailResponse> createPost(@Valid @RequestBody PostRequest request, 
                                                         Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("로그인이 필요합니다");
+        }
         String email = authentication.getName();
         PostDetailResponse response = postService.createPost(request, email);
         return ResponseEntity.ok(response);
@@ -37,14 +41,14 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        String email = authentication.getName();
+        String email = null;  // 비로그인 사용자도 조회 가능
         Map<String, Object> response = postService.getAllPosts(page, size, email);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long id, Authentication authentication) {
-        String email = authentication.getName();
+        String email = null;  // 비로그인 사용자도 조회 가능
         PostDetailResponse response = postService.getPostById(id, email);
         return ResponseEntity.ok(response);
     }
@@ -53,6 +57,9 @@ public class PostController {
     public ResponseEntity<PostDetailResponse> updatePost(@PathVariable Long id, 
                                                         @Valid @RequestBody PostRequest request,
                                                         Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("로그인이 필요합니다");
+        }
         String email = authentication.getName();
         PostDetailResponse response = postService.updatePost(id, request, email);
         return ResponseEntity.ok(response);
@@ -60,6 +67,9 @@ public class PostController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deletePost(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("로그인이 필요합니다");
+        }
         String email = authentication.getName();
         postService.deletePost(id, email);
         
@@ -73,13 +83,16 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        String email = authentication.getName();
+        String email = null;
         Map<String, Object> response = postService.searchPosts(keyword, page, size, email);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/like")
     public ResponseEntity<Map<String, Object>> toggleLike(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("로그인이 필요합니다");
+        }
         String email = authentication.getName();
         Map<String, Object> response = likeService.toggleLike(id, email);
         return ResponseEntity.ok(response);
@@ -87,6 +100,9 @@ public class PostController {
 
     @GetMapping("/{id}/like")
     public ResponseEntity<Map<String, Object>> getLikeStatus(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("로그인이 필요합니다");
+        }
         String email = authentication.getName();
         Map<String, Object> response = likeService.getLikeStatus(id, email);
         return ResponseEntity.ok(response);
