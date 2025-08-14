@@ -1,56 +1,27 @@
 function initRegisterPage() {
+    console.log('initRegisterPage called');
+    
     if (Auth.redirectIfAuthenticated()) {
         return;
     }
     
     setupRegisterForm();
-    setupNicknamePreview();
 }
 
 function setupRegisterForm() {
     const form = document.getElementById('register-form');
-    if (!form) return;
-    
-    form.addEventListener('submit', handleRegister);
-    
-    const inputs = form.querySelectorAll('input, select');
-    inputs.forEach(input => {
-        input.addEventListener('blur', () => validateFormField(input));
-        input.addEventListener('input', () => {
-            if (input.classList.contains('error')) {
-                validateFormField(input);
-            }
-        });
-    });
-}
-
-function setupNicknamePreview() {
-    const departmentSelect = document.getElementById('department');
-    const jobRoleSelect = document.getElementById('jobRole');
-    const nicknamePreview = document.getElementById('nickname-preview');
-    const nicknameDisplay = document.getElementById('nickname-display');
-    
-    if (!departmentSelect || !jobRoleSelect) return;
-    
-    function updateNicknamePreview() {
-        const department = departmentSelect.value;
-        const jobRole = jobRoleSelect.value;
-        
-        if (department && jobRole) {
-            const previewNickname = `${department}-000`;
-            nicknameDisplay.textContent = previewNickname;
-            showElement(nicknamePreview);
-        } else {
-            hideElement(nicknamePreview);
-        }
+    if (!form) {
+        console.error('Register form not found');
+        return;
     }
     
-    departmentSelect.addEventListener('change', updateNicknamePreview);
-    jobRoleSelect.addEventListener('change', updateNicknamePreview);
+    console.log('Setting up register form');
+    form.addEventListener('submit', handleRegister);
 }
 
 async function handleRegister(e) {
     e.preventDefault();
+    console.log('handleRegister called');
     
     const form = e.target;
     const submitBtn = document.getElementById('submit-btn');
@@ -65,6 +36,8 @@ async function handleRegister(e) {
         jobPosition: form.jobRole.value
     };
     
+    console.log('Form data:', formData);
+    
     const errors = validateRegisterForm(formData);
     
     if (hasValidationErrors(errors)) {
@@ -76,13 +49,15 @@ async function handleRegister(e) {
         setLoading(submitBtn, true);
         hideElement(errorBanner);
         
-        await AuthAPI.register({
+        console.log('Calling AuthAPI.register');
+        const response = await AuthAPI.register({
             email: formData.email,
             password: formData.password,
             department: formData.department,
             jobPosition: formData.jobPosition
         });
         
+        console.log('Register success:', response);
         showNotification(MESSAGES.REGISTER_SUCCESS, 'success');
         
         setTimeout(() => {
@@ -101,6 +76,8 @@ async function handleRegister(e) {
         setLoading(submitBtn, false);
     }
 }
+
+console.log('Register JS loaded');
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initRegisterPage);

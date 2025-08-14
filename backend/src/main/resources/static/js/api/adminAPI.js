@@ -1,43 +1,66 @@
-const AdminAPI = {
-    async getAllPosts(page = 1, size = 10) {
+const AuthAPI = {
+    async login(credentials) {
         try {
-            const response = await APIClient.get(ENDPOINTS.ADMIN.POSTS, {
-                page: page,
-                size: size
-            });
+            const response = await APIClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
+            
+            if (response.token) {
+                Auth.setToken(response.token);
+                Auth.setUser({
+                    email: response.email,
+                    nickname: response.nickname,
+                    isAdmin: response.isAdmin
+                });
+            }
+            
             return response;
         } catch (error) {
             throw error;
         }
     },
 
-    async getAllComments(page = 1, size = 10) {
+    async register(userData) {
         try {
-            const response = await APIClient.get(ENDPOINTS.ADMIN.COMMENTS, {
-                page: page,
-                size: size
-            });
+            const response = await APIClient.post(ENDPOINTS.AUTH.REGISTER, userData);
             return response;
         } catch (error) {
             throw error;
         }
     },
 
-    async deletePost(postId) {
+    async logout() {
         try {
-            const response = await APIClient.delete(`${ENDPOINTS.ADMIN.POSTS}/${postId}`);
+        } catch (error) {
+            console.error('Logout API error:', error);
+        } finally {
+            Auth.logout();
+        }
+    },
+
+    async getCurrentUser() {
+        try {
+            const response = await APIClient.get(ENDPOINTS.AUTH.ME);
+            
+            if (response) {
+                Auth.setUser({
+                    email: response.email,
+                    nickname: response.nickname,
+                    isAdmin: response.isAdmin
+                });
+            }
+            
             return response;
         } catch (error) {
+            Auth.logout();
             throw error;
         }
     },
 
-    async deleteComment(commentId) {
+    async checkTokenValidity() {
         try {
-            const response = await APIClient.delete(`${ENDPOINTS.ADMIN.COMMENTS}/${commentId}`);
-            return response;
+            await this.getCurrentUser();
+            return true;
         } catch (error) {
-            throw error;
+            return false;
         }
     }
 };
