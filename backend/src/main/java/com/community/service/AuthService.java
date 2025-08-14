@@ -2,12 +2,10 @@ package com.community.service;
 
 import com.community.dto.request.LoginRequest;
 import com.community.dto.request.RegisterRequest;
-import com.community.dto.response.LoginResponse;
 import com.community.dto.response.UserResponse;
 import com.community.entity.User;
 import com.community.exception.CustomException;
 import com.community.repository.UserRepository;
-import com.community.util.JwtUtil;
 import com.community.util.NicknameGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,19 +21,17 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
     private final NicknameGenerator nicknameGenerator;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, 
-                      JwtUtil jwtUtil, NicknameGenerator nicknameGenerator) {
+                      NicknameGenerator nicknameGenerator) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
         this.nicknameGenerator = nicknameGenerator;
     }
 
-    public LoginResponse login(LoginRequest request) {
-        logger.debug("로그인 시도 - 이메일: {}", request.getEmail());
+    public UserResponse authenticate(LoginRequest request) {
+        logger.debug("인증 시도 - 이메일: {}", request.getEmail());
         
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
@@ -50,10 +46,16 @@ public class AuthService {
             throw new CustomException("이메일 또는 비밀번호가 올바르지 않습니다");
         }
 
-        logger.debug("로그인 성공 - 사용자 ID: {}", user.getId());
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getIsAdmin());
-
-        return new LoginResponse(token, user.getEmail(), user.getNickname(), user.getIsAdmin());
+        logger.debug("인증 성공 - 사용자 ID: {}", user.getId());
+        
+        return new UserResponse(
+            user.getId(),
+            user.getEmail(),
+            user.getNickname(),
+            user.getDepartment(),
+            user.getJobPosition(),
+            user.getIsAdmin()
+        );
     }
 
     public UserResponse register(RegisterRequest request) {

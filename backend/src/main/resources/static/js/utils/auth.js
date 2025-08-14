@@ -1,63 +1,58 @@
 const Auth = {
-    getCurrentUser() {
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) return null;
-            
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const now = Math.floor(Date.now() / 1000);
-            
-            if (payload.exp < now) {
-                this.logout();
-                return null;
-            }
-            
-            return {
-                id: payload.userId,
-                email: payload.sub,
-                nickname: payload.nickname,
-                isAdmin: payload.isAdmin || false
-            };
-        } catch (error) {
-            console.error('토큰 파싱 오류:', error);
-            this.logout();
-            return null;
+    getUser() {
+        const userData = sessionStorage.getItem(STORAGE_KEYS.USER);
+        return userData ? JSON.parse(userData) : null;
+    },
+
+    setUser(user) {
+        if (user) {
+            sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        } else {
+            sessionStorage.removeItem(STORAGE_KEYS.USER);
         }
     },
 
-    isLoggedIn() {
-        return this.getCurrentUser() !== null;
-    },
-
-    requireAuth() {
-        if (!this.isLoggedIn()) {
-            alert('로그인이 필요합니다');
-            window.location.href = 'login.html';
-            return false;
-        }
-        return true;
-    },
-
-    requireAdminAuth() {
-        if (!this.requireAuth()) {
-            return false;
-        }
-        
-        const user = this.getCurrentUser();
-        if (!user.isAdmin) {
-            alert('관리자 권한이 필요합니다');
-            window.location.href = 'index.html';
-            return false;
-        }
-        return true;
+    isAuthenticated() {
+        return !!this.getUser();
     },
 
     logout() {
-        localStorage.removeItem('authToken');
-        window.location.href = 'index.html';
+        sessionStorage.removeItem(STORAGE_KEYS.USER);
+        window.location.href = 'login.html';
+    },
+
+    redirectIfAuthenticated() {
+        if (this.isAuthenticated()) {
+            window.location.href = 'index.html';
+            return true;
+        }
+        return false;
+    },
+
+    async requireAuth() {
+        if (!this.isAuthenticated()) {
+            try {
+                await AuthAPI.getCurrentUser();
+                return true;
+            } catch (error) {
+                alert('로그인이 필요합니다.');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+        return true;
     },
 
     updateHeaderUI() {
-        updateHeaderUI();
+        const user = this.getUser();
+        updateHeaderForUser(user);
+    },
+
+    handleAuthError(error) {
+        if (error.status === 401 || error.status === 403) {
+            this.logout();
+        }
     }
 };
+
+console.log('Auth loaded');

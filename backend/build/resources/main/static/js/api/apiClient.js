@@ -1,77 +1,131 @@
-class APIClient {
-    constructor(baseURL = API_BASE_URL) {
-        this.baseURL = baseURL;
-    }
-
-    async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
-        const defaultHeaders = {
-            'Content-Type': 'application/json',
-            ...Auth.getAuthHeaders()
+const APIClient = {
+    _getHeaders() {
+        return {
+            'Content-Type': 'application/json'
         };
+    },
 
-        const config = {
-            headers: { ...defaultHeaders, ...options.headers },
-            ...options
-        };
+    _buildUrl(endpoint, params = {}) {
+        const url = new URL(`${API_BASE_URL}${endpoint}`);
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                url.searchParams.append(key, params[key]);
+            }
+        });
+        return url.toString();
+    },
 
-        if (config.body && typeof config.body === 'object') {
-            config.body = JSON.stringify(config.body);
+    async _handleResponse(response) {
+        console.log('API Response status:', response.status);
+        
+        if (!response.ok) {
+            let errorData = {};
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                console.error('Error parsing error response:', e);
+            }
+            
+            const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
+            error.status = response.status;
+            error.data = errorData;
+            throw error;
         }
 
+        const responseData = await response.json();
+        console.log('API Response data:', responseData);
+        return responseData;
+    },
+
+    async get(endpoint, params = {}) {
+        const url = this._buildUrl(endpoint, params);
+        console.log('API GET Request:', url);
+        
         try {
-            const response = await fetch(url, config);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: this._getHeaders(),
+                credentials: 'include'
+            });
             
-            if (response.status === 401) {
-                Auth.logout();
-                window.location.href = '/login.html';
-                throw new Error('인증이 필요합니다.');
-            }
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                const errorMessage = errorData?.message || `HTTP ${response.status}`;
-                throw new Error(errorMessage);
-            }
-
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return await response.json();
-            }
+            return await this._handleResponse(response);
             
-            return await response.text();
-
         } catch (error) {
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                throw new Error(MESSAGES.NETWORK_ERROR);
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
             }
+            console.error('API Client GET error:', error);
+            throw error;
+        }
+    },
+
+    async post(endpoint, data = {}) {
+        const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API POST Request:', url, data);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: this._getHeaders(),
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+            
+            return await this._handleResponse(response);
+            
+        } catch (error) {
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
+            }
+            console.error('API Client POST error:', error);
+            throw error;
+        }
+    },
+
+    async put(endpoint, data = {}) {
+        const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API PUT Request:', url, data);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: this._getHeaders(),
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+            
+            return await this._handleResponse(response);
+            
+        } catch (error) {
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
+            }
+            console.error('API Client PUT error:', error);
+            throw error;
+        }
+    },
+
+    async delete(endpoint) {
+        const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API DELETE Request:', url);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: this._getHeaders(),
+                credentials: 'include'
+            });
+            
+            return await this._handleResponse(response);
+            
+        } catch (error) {
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
+            }
+            console.error('API Client DELETE error:', error);
             throw error;
         }
     }
+};
 
-    async get(endpoint, params = {}) {
-        const queryString = new URLSearchParams(params).toString();
-        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-        return this.request(url, { method: 'GET' });
-    }
-
-    async post(endpoint, data = {}) {
-        return this.request(endpoint, {
-            method: 'POST',
-            body: data
-        });
-    }
-
-    async put(endpoint, data = {}) {
-        return this.request(endpoint, {
-            method: 'PUT',
-            body: data
-        });
-    }
-
-    async delete(endpoint) {
-        return this.request(endpoint, { method: 'DELETE' });
-    }
-}
-
-const apiClient = new APIClient();
+console.log('APIClient loaded');

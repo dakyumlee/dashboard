@@ -2,95 +2,163 @@ package com.community.controller;
 
 import com.community.dto.request.LoginRequest;
 import com.community.dto.request.RegisterRequest;
-import com.community.dto.response.LoginResponse;
 import com.community.dto.response.UserResponse;
-import com.community.entity.User;
-import com.community.repository.UserRepository;
 import com.community.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
     private final AuthService authService;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
-    public AuthController(AuthService authService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthService authService, AuthenticationManager authenticationManager) {
         this.authService = authService;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
-        UserResponse response = authService.register(request);
-        return ResponseEntity.ok(response);
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request, 
+                                                    HttpServletRequest httpRequest) {
+        try {
+            logger.debug("로그인 요청 수신: {}", request.getEmail());
+            
+            UserResponse user = authService.authenticate(request);
+            
+            String role = user.getIsAdmin() ? "ROLE_ADMIN" : "ROLE_USER";
+            
+            UsernamePasswordAuthenticationToken authToken = 
+                new UsernamePasswordAuthenticationToken(
+                    user.getEmail(), 
+                    null, 
+                    Collections.singletonList(new SimpleGrantedAuthority(role))
+                );
+            
+            SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+            securityContext.setAuthentication(authToken);
+            SecurityContextHolder.setContext(securityContext);
+            
+            HttpSession session = httpRequest.getSession(true);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
+            session.setAttribute("user", user);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "로그인되었습니다");
+            response.put("user", Map.of(
+                "email", user.getEmail(),
+                "nickname", user.getNickname(),
+                "isAdmin", user.getIsAdmin()
+            ));
+            
+            logger.debug("로그인 성공: {}", request.getEmail());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("로그인 실패: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
+        try {
+            logger.debug("회원가입 요청 수신: {}", request.getEmail());
+            
+            UserResponse user = authService.register(request);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "회원가입이 완료되었습니다");
+            response.put("user", Map.of(
+                "email", user.getEmail(),
+                "nickname", user.getNickname(),
+                "isAdmin", user.getIsAdmin()
+            ));
+            
+            logger.debug("회원가입 성공: {}", request.getEmail());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("회원가입 실패: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(errorResponse);
+        }
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
-        }
-        String email = authentication.getName();
-        UserResponse response = authService.getCurrentUser(email);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/create-admin")
-    public ResponseEntity<Map<String, String>> createAdmin() {
+    public ResponseEntity<Map<String, Object>> getCurrentUser(HttpServletRequest request) {
         try {
-            boolean adminExists = userRepository.existsByRole("ADMIN");
-            if (adminExists) {
-                Map<String, String> response = new HashMap<>();
-                response.put("message", "관리자 계정이 이미 존재합니다");
-                return ResponseEntity.ok(response);
+            HttpSession session = request.getSession(false);
+            if (session == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다"));
             }
-
-            String email = "admin@company.com";
-            String password = "admin123!";
             
-            if (userRepository.existsByEmail(email)) {
-                Map<String, String> response = new HashMap<>();
-                response.put("message", "해당 이메일로 이미 가입된 계정이 있습니다");
-                return ResponseEntity.ok(response);
+            UserResponse user = (UserResponse) session.getAttribute("user");
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "세션이 만료되었습니다"));
             }
-
-            String encodedPassword = passwordEncoder.encode(password);
-            String nickname = "관리자";
-
-            User admin = new User(email, encodedPassword, "관리", "관리자", nickname);
-            admin.setRole("ADMIN");
             
-            userRepository.save(admin);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "관리자 계정이 생성되었습니다");
-            response.put("email", email);
-            response.put("password", password);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("user", Map.of(
+                "email", user.getEmail(),
+                "nickname", user.getNickname(),
+                "isAdmin", user.getIsAdmin()
+            ));
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "관리자 계정 생성 실패: " + e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
+            logger.error("현재 사용자 조회 실패: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "서버 오류"));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            
+            SecurityContextHolder.clearContext();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "로그아웃되었습니다");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("로그아웃 실패: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "로그아웃 실패"));
         }
     }
 
