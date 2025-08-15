@@ -6,6 +6,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -44,13 +45,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException e) {
+        System.err.println("NoResourceFoundException caught: " + e.getMessage());
+        System.err.println("Resource path: " + e.getResourcePath());
+        
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "요청한 리소스를 찾을 수 없습니다: " + e.getResourcePath(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception e) {
-        System.err.println("=== Exception Details ===");
-        System.err.println("Exception type: " + e.getClass().getSimpleName());
+        System.err.println("Unexpected exception: " + e.getClass().getSimpleName());
         System.err.println("Exception message: " + e.getMessage());
         e.printStackTrace();
-        System.err.println("========================");
         
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -109,13 +121,36 @@ public class GlobalExceptionHandler {
             this.timestamp = timestamp;
         }
 
-        public int getStatus() { return status; }
-        public void setStatus(int status) { this.status = status; }
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-        public Map<String, String> getErrors() { return errors; }
-        public void setErrors(Map<String, String> errors) { this.errors = errors; }
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+        public int getStatus() {
+            return status;
+        }
+
+        public void setStatus(int status) {
+            this.status = status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public Map<String, String> getErrors() {
+            return errors;
+        }
+
+        public void setErrors(Map<String, String> errors) {
+            this.errors = errors;
+        }
+
+        public LocalDateTime getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(LocalDateTime timestamp) {
+            this.timestamp = timestamp;
+        }
     }
 }

@@ -1,131 +1,106 @@
-const APIClient = {
-    _getHeaders() {
-        return {
-            'Content-Type': 'application/json'
+const API_BASE_URL = 'http://localhost:8080/api';
+
+class ApiClient {
+    constructor() {
+        this.baseURL = API_BASE_URL;
+    }
+
+    async request(endpoint, options = {}) {
+        const url = `${this.baseURL}${endpoint}`;
+        
+        const defaultOptions = {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         };
-    },
 
-    _buildUrl(endpoint, params = {}) {
-        const url = new URL(`${API_BASE_URL}${endpoint}`);
-        Object.keys(params).forEach(key => {
-            if (params[key] !== null && params[key] !== undefined) {
-                url.searchParams.append(key, params[key]);
+        const finalOptions = {
+            ...defaultOptions,
+            ...options,
+            headers: {
+                ...defaultOptions.headers,
+                ...options.headers
             }
-        });
-        return url.toString();
-    },
+        };
 
-    async _handleResponse(response) {
-        console.log('API Response status:', response.status);
-        
-        if (!response.ok) {
-            let errorData = {};
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                console.error('Error parsing error response:', e);
-            }
-            
-            const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
-            error.status = response.status;
-            error.data = errorData;
-            throw error;
-        }
-
-        const responseData = await response.json();
-        console.log('API Response data:', responseData);
-        return responseData;
-    },
-
-    async get(endpoint, params = {}) {
-        const url = this._buildUrl(endpoint, params);
-        console.log('API GET Request:', url);
-        
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: this._getHeaders(),
-                credentials: 'include'
-            });
+            console.log(`API 요청: ${options.method || 'GET'} ${url}`);
             
-            return await this._handleResponse(response);
+            const response = await fetch(url, finalOptions);
             
-        } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
-            }
-            console.error('API Client GET error:', error);
-            throw error;
-        }
-    },
+            console.log(`응답 상태: ${response.status}`);
 
-    async post(endpoint, data = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        console.log('API POST Request:', url, data);
-        
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: this._getHeaders(),
-                credentials: 'include',
-                body: JSON.stringify(data)
-            });
-            
-            return await this._handleResponse(response);
-            
-        } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
+            if (response.status === 401) {
+                window.auth.isLoggedIn = false;
+                window.auth.currentUser = null;
+                window.auth.updateUI();
+                alert('로그인이 필요합니다');
+                window.location.href = '/';
+                return null;
             }
-            console.error('API Client POST error:', error);
-            throw error;
-        }
-    },
 
-    async put(endpoint, data = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        console.log('API PUT Request:', url, data);
-        
-        try {
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: this._getHeaders(),
-                credentials: 'include',
-                body: JSON.stringify(data)
-            });
-            
-            return await this._handleResponse(response);
-            
-        } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('API 오류:', errorData);
+                throw new Error(`HTTP ${response.status}: ${errorData}`);
             }
-            console.error('API Client PUT error:', error);
-            throw error;
-        }
-    },
 
-    async delete(endpoint) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        console.log('API DELETE Request:', url);
-        
-        try {
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: this._getHeaders(),
-                credentials: 'include'
-            });
-            
-            return await this._handleResponse(response);
-            
+            const data = await response.json();
+            console.log('API 응답:', data);
+            return data;
+
         } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
-            }
-            console.error('API Client DELETE error:', error);
+            console.error('API 요청 실패:', error);
             throw error;
         }
     }
+
+    async get(endpoint) {
+        return this.request(endpoint, { method: 'GET' });
+    }
+
+    async post(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async put(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async delete(endpoint) {
+        return this.request(endpoint, { method: 'DELETE' });
+    }
+}
+
+const apiClient = new ApiClient();
+
+const postAPI = {
+    getAll: (page = 1, size = 10) => apiClient.get(`/posts?page=${page}&size=${size}`),
+    getById: (id) => apiClient.get(`/posts/${id}`),
+    create: (postData) => apiClient.post('/posts', postData),
+    update: (id, postData) => apiClient.put(`/posts/${id}`, postData),
+    delete: (id) => apiClient.delete(`/posts/${id}`)
 };
 
-console.log('APIClient loaded');
+const commentAPI = {
+    getByPostId: (postId) => apiClient.get(`/posts/${postId}/comments`),
+    create: (postId, commentData) => apiClient.post(`/posts/${postId}/comments`, commentData),
+    update: (commentId, commentData) => apiClient.put(`/comments/${commentId}`, commentData),
+    delete: (commentId) => apiClient.delete(`/comments/${commentId}`)
+};
+
+const likeAPI = {
+    toggle: (postId) => apiClient.post(`/posts/${postId}/like`)
+};
+
+window.apiClient = apiClient;
+window.postAPI = postAPI;
+window.commentAPI = commentAPI;
+window.likeAPI = likeAPI;
