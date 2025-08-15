@@ -5,57 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>커뮤니티</title>
     <link rel="stylesheet" href="css/common.css">
-    <style>
-        .posts-container {
-            margin-top: 20px;
-        }
-
-        .post-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: box-shadow 0.2s;
-        }
-
-        .post-card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .post-title {
-            margin: 0 0 10px 0;
-            font-size: 1.2em;
-            font-weight: 600;
-        }
-
-        .post-link {
-            color: #333;
-            text-decoration: none;
-        }
-
-        .post-link:hover {
-            color: #007bff;
-        }
-
-        .post-meta {
-            display: flex;
-            gap: 15px;
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-    </style>
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <header class="header">
@@ -67,12 +20,11 @@
                 <div class="nav-guest" id="nav-guest">
                     <a href="login.html" class="btn btn-outline btn-sm">로그인</a>
                     <a href="register.html" class="btn btn-primary btn-sm">회원가입</a>
-                    <a href="admin.html" class="btn btn-secondary btn-sm">관리자</a>
                 </div>
                 <div class="nav-user hidden" id="nav-user">
                     <span class="user-nickname" id="user-nickname"></span>
                     <a href="create-post.html" class="btn btn-primary btn-sm">글쓰기</a>
-                    <a href="admin.html" class="btn btn-secondary btn-sm">관리자</a>
+                    <a href="admin.html" class="btn btn-secondary btn-sm hidden" id="admin-link">관리자</a>
                     <button class="btn btn-outline btn-sm" id="logout-btn">로그아웃</button>
                 </div>
             </nav>
@@ -94,9 +46,6 @@
             <div class="error-banner hidden" id="error-banner">
                 <p id="error-message"></p>
                 <button class="btn btn-sm btn-primary" id="retry-btn">다시 시도</button>
-                <button class="btn btn-sm btn-secondary" id="debug-btn">DB 상태 확인</button>
-                <button class="btn btn-sm btn-success" id="create-admin-btn">관리자 계정 생성</button>
-                <button class="btn btn-sm btn-info" id="create-test-btn">테스트 계정 생성</button>
             </div>
 
             <div class="empty-state hidden" id="empty-state">
@@ -105,206 +54,27 @@
                 <a href="create-post.html" class="btn btn-primary">글쓰기</a>
             </div>
 
-            <div class="posts-container hidden" id="posts-container">
-                <div class="posts-list" id="posts-list"></div>
+            <div id="post-list"></div>
+
+            <div class="pagination hidden" id="pagination">
+                <button class="btn btn-outline btn-sm" id="prev-btn" disabled>이전</button>
+                <div class="page-numbers" id="page-numbers"></div>
+                <button class="btn btn-outline btn-sm" id="next-btn">다음</button>
             </div>
         </div>
     </main>
 
-    <script>
-        const API_BASE_URL = 'http://localhost:8080/api';
-        let currentUser = null;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initIndex();
-        });
-
-        function initIndex() {
-            checkAuthStatus();
-            loadPosts();
-            setupEventListeners();
-        }
-
-        function checkAuthStatus() {
-            const token = localStorage.getItem('token');
-            const userData = localStorage.getItem('userData');
-            
-            if (token && userData) {
-                try {
-                    currentUser = JSON.parse(userData);
-                    updateNavigation(true);
-                } catch (e) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userData');
-                    updateNavigation(false);
-                }
-            } else {
-                updateNavigation(false);
-            }
-        }
-
-        function updateNavigation(isLoggedIn) {
-            const navGuest = document.getElementById('nav-guest');
-            const navUser = document.getElementById('nav-user');
-
-            if (isLoggedIn && currentUser) {
-                navGuest.classList.add('hidden');
-                navUser.classList.remove('hidden');
-                document.getElementById('user-nickname').textContent = currentUser.nickname;
-            } else {
-                navGuest.classList.remove('hidden');
-                navUser.classList.add('hidden');
-            }
-        }
-
-        async function loadPosts() {
-            document.getElementById('loading').classList.remove('hidden');
-            
-            try {
-                const healthResponse = await fetch(`${API_BASE_URL}/test/health`);
-                if (!healthResponse.ok) {
-                    throw new Error('서버에 연결할 수 없습니다.');
-                }
-
-                const response = await fetch(`${API_BASE_URL}/test/posts`);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || '게시글을 불러올 수 없습니다.');
-                }
-
-                const posts = await response.json();
-                displayPosts(posts);
-                
-            } catch (error) {
-                console.error('Error loading posts:', error);
-                showError(`게시글을 불러오는데 실패했습니다: ${error.message}`);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-            }
-        }
-
-        function displayPosts(posts) {
-            const postsContainer = document.getElementById('posts-container');
-            const emptyState = document.getElementById('empty-state');
-            const postsList = document.getElementById('posts-list');
-
-            if (posts.length === 0) {
-                postsContainer.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            postsContainer.classList.remove('hidden');
-
-            postsList.innerHTML = '';
-            posts.forEach(post => {
-                const postElement = createPostElement(post);
-                postsList.appendChild(postElement);
-            });
-        }
-
-        function createPostElement(post) {
-            const postDiv = document.createElement('div');
-            postDiv.className = 'post-card';
-            
-            postDiv.innerHTML = `
-                <div class="post-card-content">
-                    <h3 class="post-title">
-                        <a href="post-detail.html?id=${post.id}" class="post-link">${escapeHtml(post.title)}</a>
-                    </h3>
-                    <div class="post-meta">
-                        <span class="post-author">${escapeHtml(post.authorNickname)}</span>
-                        <span class="post-date">${new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
-                        <span class="post-likes">❤️ ${post.likeCount || 0}</span>
-                    </div>
-                </div>
-            `;
-
-            return postDiv;
-        }
-
-        function setupEventListeners() {
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('retry-btn').addEventListener('click', () => {
-                hideError();
-                loadPosts();
-            });
-            document.getElementById('debug-btn').addEventListener('click', checkDbStatus);
-            document.getElementById('create-admin-btn').addEventListener('click', createAdmin);
-            document.getElementById('create-test-btn').addEventListener('click', createTestUser);
-        }
-
-        function showError(message) {
-            document.getElementById('error-banner').classList.remove('hidden');
-            document.getElementById('error-message').textContent = message;
-        }
-
-        function hideError() {
-            document.getElementById('error-banner').classList.add('hidden');
-        }
-
-        function logout() {
-            if (confirm('로그아웃 하시겠습니까?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('userData');
-                window.location.reload();
-            }
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        async function checkDbStatus() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/debug/db-status`);
-                const data = await response.json();
-                
-                alert(`DB 상태:\n연결: ${data.connection}\n사용자 수: ${data.userCount}\n게시글 수: ${data.postCount}\n데이터베이스: ${data.database}`);
-                
-                if (data.postCount > 0) {
-                    const postsResponse = await fetch(`${API_BASE_URL}/debug/posts-raw`);
-                    const posts = await postsResponse.json();
-                    displayPosts(posts);
-                    hideError();
-                }
-                
-            } catch (error) {
-                alert(`DB 확인 실패: ${error.message}`);
-            }
-        }
-
-        async function createAdmin() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/init/admin`, {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                alert(`관리자 계정:\n이메일: ${data.email}\n비밀번호: ${data.password}\n${data.message}`);
-                
-            } catch (error) {
-                alert(`계정 생성 실패: ${error.message}`);
-            }
-        }
-
-        async function createTestUser() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/init/test-user`, {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                alert(`테스트 계정:\n이메일: ${data.email}\n비밀번호: ${data.password}\n${data.message}`);
-                
-            } catch (error) {
-                alert(`계정 생성 실패: ${error.message}`);
-            }
-        }
-    </script>
+    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/validation.js"></script>
+    <script src="js/utils/auth.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/api/authAPI.js"></script>
+    <script src="js/api/postAPI.js"></script>
+    <script src="js/components/header.js"></script>
+    <script src="js/components/postCard.js"></script>
+    <script src="js/components/pagination.js"></script>
+    <script src="js/pages/home.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
