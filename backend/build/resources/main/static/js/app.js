@@ -1,78 +1,85 @@
-function initAuth() {
-    updateAuthUI();
-    setupGlobalEventListeners();
-}
-
-function updateAuthUI() {
-    const navGuest = document.getElementById('nav-guest');
-    const navUser = document.getElementById('nav-user');
-    const userNickname = document.getElementById('user-nickname');
-    const adminLink = document.getElementById('admin-link');
-
-    if (Auth.isAuthenticated()) {
-        const user = Auth.getCurrentUser();
-        
-        if (navGuest) hideElement(navGuest);
-        if (navUser) showElement(navUser);
-        
-        if (userNickname && user) {
-            userNickname.textContent = user.nickname || user.email;
-        }
-        
-        if (adminLink && user && user.isAdmin) {
-            showElement(adminLink);
-        }
-    } else {
-        if (navGuest) showElement(navGuest);
-        if (navUser) hideElement(navUser);
-        if (adminLink) hideElement(adminLink);
-    }
-}
-
-function setupGlobalEventListeners() {
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            Auth.logout();
-            showToast(MESSAGES.LOGOUT_SUCCESS, 'success');
-            updateAuthUI();
-            
-            if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
-                window.location.href = '/';
-            }
-        });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    initAuth();
-    
-    const currentPage = window.location.pathname;
-    
-    if (currentPage === '/' || currentPage === '/index.html') {
-        if (typeof initHomePage === 'function') {
-            initHomePage();
-        }
-    } else if (currentPage === '/login.html') {
-        if (typeof initLoginPage === 'function') {
-            initLoginPage();
-        }
-    } else if (currentPage === '/register.html') {
-        if (typeof initRegisterPage === 'function') {
-            initRegisterPage();
-        }
-    } else if (currentPage === '/post-detail.html') {
-        if (typeof initPostDetailPage === 'function') {
-            initPostDetailPage();
-        }
-    } else if (currentPage === '/create-post.html') {
-        if (typeof initCreatePostPage === 'function') {
-            initCreatePostPage();
-        }
-    } else if (currentPage === '/admin.html') {
-        if (typeof initAdminPage === 'function') {
-            initAdminPage();
-        }
-    }
+document.addEventListener('DOMContentLoaded', async function() {
+    await initApp();
 });
+
+async function initApp() {
+    try {
+        initHeader();
+        await Auth.updateHeaderUI();
+        
+        const currentPage = getCurrentPage();
+        await initPageSpecificCode(currentPage);
+        
+    } catch (error) {
+        console.error('App initialization error:', error);
+    }
+}
+
+function getCurrentPage() {
+    const path = window.location.pathname;
+    const filename = path.split('/').pop() || 'index.html';
+    
+    switch(filename) {
+        case 'index.html':
+        case '':
+            return 'home';
+        case 'login.html':
+            return 'login';
+        case 'register.html':
+            return 'register';
+        case 'create-post.html':
+            return 'create-post';
+        case 'edit-post.html':
+            return 'edit-post';
+        case 'post-detail.html':
+            return 'post-detail';
+        case 'admin.html':
+            return 'admin';
+        default:
+            return 'unknown';
+    }
+}
+
+async function initPageSpecificCode(page) {
+    switch(page) {
+        case 'home':
+            if (typeof initHomePage === 'function') {
+                await initHomePage();
+            }
+            break;
+        case 'login':
+            if (typeof initLoginPage === 'function') {
+                await initLoginPage();
+            }
+            break;
+        case 'register':
+            if (typeof initRegisterPage === 'function') {
+                await initRegisterPage();
+            }
+            break;
+        case 'create-post':
+            if (typeof initCreatePostPage === 'function') {
+                await initCreatePostPage();
+            }
+            break;
+        case 'edit-post':
+            if (typeof initEditPostPage === 'function') {
+                await initEditPostPage();
+            }
+            break;
+        case 'post-detail':
+            if (typeof initPostDetailPage === 'function') {
+                await initPostDetailPage();
+            }
+            break;
+        case 'admin':
+            if (typeof initAdminPage === 'function') {
+                await initAdminPage();
+            }
+            break;
+    }
+}
+
+function updateAuthUI(user) {
+    updateHeaderForUser(user);
+}

@@ -1,9 +1,8 @@
-function initCreatePostPage() {
-    if (!Auth.requireAuth()) {
-        return;
+async function initCreatePostPage() {
+    const isAuth = await Auth.requireAuth();
+    if (isAuth) {
+        setupCreatePostForm();
     }
-    
-    setupCreatePostForm();
 }
 
 function setupCreatePostForm() {
@@ -49,7 +48,7 @@ async function handleCreatePost(e) {
         
         await PostAPI.createPost(formData);
         
-        showNotification(MESSAGES.POST_CREATE_SUCCESS, 'success');
+        showNotification(MESSAGES.POST_CREATED, 'success');
         
         setTimeout(() => {
             window.location.href = 'index.html';
@@ -66,6 +65,56 @@ async function handleCreatePost(e) {
     } finally {
         setLoading(submitBtn, false);
     }
+}
+
+function validatePostForm(formData) {
+    const errors = {};
+    
+    if (!formData.title || formData.title.length < VALIDATION.MIN_TITLE_LENGTH) {
+        errors.title = `제목은 최소 ${VALIDATION.MIN_TITLE_LENGTH}자 이상이어야 합니다`;
+    }
+    
+    if (formData.title && formData.title.length > VALIDATION.MAX_TITLE_LENGTH) {
+        errors.title = `제목은 최대 ${VALIDATION.MAX_TITLE_LENGTH}자까지 입력 가능합니다`;
+    }
+    
+    if (!formData.content || formData.content.length < VALIDATION.MIN_CONTENT_LENGTH) {
+        errors.content = `내용은 최소 ${VALIDATION.MIN_CONTENT_LENGTH}자 이상이어야 합니다`;
+    }
+    
+    if (formData.content && formData.content.length > VALIDATION.MAX_CONTENT_LENGTH) {
+        errors.content = `내용은 최대 ${VALIDATION.MAX_CONTENT_LENGTH}자까지 입력 가능합니다`;
+    }
+    
+    return errors;
+}
+
+function validateFormField(input) {
+    const value = input.value.trim();
+    const fieldName = input.name;
+    let error = null;
+    
+    if (fieldName === 'title') {
+        if (!value || value.length < VALIDATION.MIN_TITLE_LENGTH) {
+            error = `제목은 최소 ${VALIDATION.MIN_TITLE_LENGTH}자 이상이어야 합니다`;
+        } else if (value.length > VALIDATION.MAX_TITLE_LENGTH) {
+            error = `제목은 최대 ${VALIDATION.MAX_TITLE_LENGTH}자까지 입력 가능합니다`;
+        }
+    } else if (fieldName === 'content') {
+        if (!value || value.length < VALIDATION.MIN_CONTENT_LENGTH) {
+            error = `내용은 최소 ${VALIDATION.MIN_CONTENT_LENGTH}자 이상이어야 합니다`;
+        } else if (value.length > VALIDATION.MAX_CONTENT_LENGTH) {
+            error = `내용은 최대 ${VALIDATION.MAX_CONTENT_LENGTH}자까지 입력 가능합니다`;
+        }
+    }
+    
+    if (error) {
+        addInputError(input, error);
+    } else {
+        removeInputError(input);
+    }
+    
+    return !error;
 }
 
 if (document.readyState === 'loading') {

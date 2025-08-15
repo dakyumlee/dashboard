@@ -10,59 +10,100 @@ function hideElement(element) {
     }
 }
 
-function formatDateTime(dateString) {
-    if (!dateString) return '';
+function toggleElement(element, show) {
+    if (element) {
+        if (show) {
+            showElement(element);
+        } else {
+            hideElement(element);
+        }
+    }
+}
+
+function setLoading(button, loading = true) {
+    if (!button) return;
     
+    if (loading) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = '처리 중...';
+    } else {
+        button.disabled = false;
+        button.textContent = button.dataset.originalText || button.textContent;
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        border-radius: 4px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function clearFormErrors(form) {
+    const errorElements = form.querySelectorAll('.error-message');
+    errorElements.forEach(element => {
+        element.classList.add('hidden');
+        element.textContent = '';
+    });
+    
+    const inputElements = form.querySelectorAll('.form-control');
+    inputElements.forEach(element => element.classList.remove('error'));
+}
+
+function addInputError(input, message) {
+    input.classList.add('error');
+    const errorElement = document.getElementById(`${input.name}-error`);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+}
+
+function removeInputError(input) {
+    input.classList.remove('error');
+    const errorElement = document.getElementById(`${input.name}-error`);
+    if (errorElement) {
+        errorElement.textContent = '';
+        errorElement.classList.add('hidden');
+    }
+}
+
+function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMs = now - date;
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
     
-    if (diffInDays === 0) {
-        return date.toLocaleTimeString('ko-KR', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-    } else if (diffInDays === 1) {
-        return '어제';
-    } else if (diffInDays < 7) {
-        return `${diffInDays}일 전`;
-    } else {
-        return date.toLocaleDateString('ko-KR');
-    }
-}
-
-function truncateText(text, maxLength) {
-    if (!text || text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-function getURLParams() {
-    const params = {};
-    const urlParams = new URLSearchParams(window.location.search);
-    for (const [key, value] of urlParams) {
-        params[key] = value;
-    }
-    return params;
-}
-
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
+    if (diffMins < 1) return '방금 전';
+    if (diffMins < 60) return `${diffMins}분 전`;
+    if (diffHours < 24) return `${diffHours}시간 전`;
+    if (diffDays < 7) return `${diffDays}일 전`;
     
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 100);
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            document.body.removeChild(toast);
-        }, 300);
-    }, 3000);
+    return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 }
 
 function debounce(func, wait) {

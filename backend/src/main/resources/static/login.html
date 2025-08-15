@@ -5,84 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 - 커뮤니티</title>
     <link rel="stylesheet" href="css/common.css">
-    <style>
-        .auth-container {
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .auth-header h1 {
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .auth-form {
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        .form-control.error {
-            border-color: #dc3545;
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .auth-links {
-            text-align: center;
-            color: #666;
-        }
-
-        .auth-links a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .auth-links a:hover {
-            text-decoration: underline;
-        }
-
-        .error-message {
-            color: #dc3545;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <header class="header">
@@ -90,27 +16,20 @@
             <a href="index.html" class="logo">
                 <h1>커뮤니티</h1>
             </a>
-            <nav class="nav" id="navigation">
-                <div class="nav-guest" id="nav-guest">
-                    <a href="login.html" class="btn btn-outline btn-sm">로그인</a>
+            <nav class="nav">
+                <div class="nav-guest">
                     <a href="register.html" class="btn btn-primary btn-sm">회원가입</a>
-                </div>
-                <div class="nav-user hidden" id="nav-user">
-                    <span class="user-nickname" id="user-nickname"></span>
-                    <a href="create-post.html" class="btn btn-primary btn-sm">글쓰기</a>
-                    <a href="admin.html" class="btn btn-secondary btn-sm hidden" id="admin-link">관리자</a>
-                    <button class="btn btn-outline btn-sm" id="logout-btn">로그아웃</button>
                 </div>
             </nav>
         </div>
     </header>
 
     <main class="main-content">
-        <div class="container">
-            <div class="auth-container">
-                <div class="auth-header">
+        <div class="form-page">
+            <div class="form-container">
+                <div class="form-header">
                     <h1>로그인</h1>
-                    <p class="text-muted">계정에 로그인하여 커뮤니티에 참여하세요</p>
+                    <p>커뮤니티에 로그인하여 소통을 시작하세요</p>
                 </div>
 
                 <form id="login-form" class="auth-form">
@@ -144,175 +63,28 @@
                         <div class="error-message hidden" id="password-error"></div>
                     </div>
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-block" id="login-btn">
-                            로그인
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
+                        로그인
+                    </button>
                 </form>
 
-                <div class="auth-links">
-                    <p>계정이 없으신가요? <a href="register.html">회원가입</a></p>
+                <div class="form-footer">
+                    <p>
+                        아직 계정이 없으신가요?
+                        <a href="register.html" class="link">회원가입</a>
+                    </p>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        const API_BASE_URL = 'http://localhost:8080/api';
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initLogin();
-        });
-
-        function initLogin() {
-            if (localStorage.getItem('token')) {
-                window.location.href = 'index.html';
-                return;
-            }
-            
-            setupForm();
-        }
-
-        function setupForm() {
-            const form = document.getElementById('login-form');
-            form.addEventListener('submit', handleSubmit);
-            
-            const inputs = form.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.addEventListener('blur', () => validateField(input));
-                input.addEventListener('input', () => {
-                    if (input.classList.contains('error')) {
-                        validateField(input);
-                    }
-                });
-            });
-        }
-
-        async function handleSubmit(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            
-            if (!validateForm(email, password)) {
-                return;
-            }
-            
-            const loginBtn = document.getElementById('login-btn');
-            loginBtn.disabled = true;
-            loginBtn.textContent = '로그인 중...';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || '로그인에 실패했습니다.');
-                }
-
-                // JWT 토큰과 사용자 정보 저장
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('userData', JSON.stringify({
-                    email: data.email,
-                    nickname: data.nickname,
-                    isAdmin: data.isAdmin || false
-                }));
-
-                alert('로그인되었습니다.');
-                window.location.href = 'index.html';
-
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = '로그인';
-            }
-        }
-
-        function validateForm(email, password) {
-            let isValid = true;
-
-            if (!email) {
-                showFieldError('email', '이메일을 입력하세요.');
-                isValid = false;
-            } else if (!isValidEmail(email)) {
-                showFieldError('email', '올바른 이메일 형식이 아닙니다.');
-                isValid = false;
-            } else {
-                hideFieldError('email');
-            }
-
-            if (!password) {
-                showFieldError('password', '비밀번호를 입력하세요.');
-                isValid = false;
-            } else {
-                hideFieldError('password');
-            }
-
-            return isValid;
-        }
-
-        function validateField(field) {
-            const value = field.value.trim();
-            const name = field.name;
-
-            switch (name) {
-                case 'email':
-                    if (!value) {
-                        showFieldError(name, '이메일을 입력하세요.');
-                    } else if (!isValidEmail(value)) {
-                        showFieldError(name, '올바른 이메일 형식이 아닙니다.');
-                    } else {
-                        hideFieldError(name);
-                    }
-                    break;
-                case 'password':
-                    if (!value) {
-                        showFieldError(name, '비밀번호를 입력하세요.');
-                    } else {
-                        hideFieldError(name);
-                    }
-                    break;
-            }
-        }
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-
-        function showFieldError(fieldName, message) {
-            const field = document.getElementById(fieldName);
-            const errorDiv = document.getElementById(`${fieldName}-error`);
-            
-            field.classList.add('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-        }
-
-        function hideFieldError(fieldName) {
-            const field = document.getElementById(fieldName);
-            const errorDiv = document.getElementById(`${fieldName}-error`);
-            
-            field.classList.remove('error');
-            errorDiv.classList.add('hidden');
-        }
-
-        function showError(message) {
-            const errorBanner = document.getElementById('error-banner');
-            const errorMessage = document.getElementById('error-message');
-            
-            errorMessage.textContent = message;
-            errorBanner.classList.remove('hidden');
-        }
-    </script>
+    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/validation.js"></script>
+    <script src="js/utils/auth.js"></script>
+    <script src="js/api/apiClient.js"></script>
+    <script src="js/api/authAPI.js"></script>
+    <script src="js/pages/login.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
