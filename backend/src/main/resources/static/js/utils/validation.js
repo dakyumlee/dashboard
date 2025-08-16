@@ -1,105 +1,101 @@
 function validateEmail(email) {
-    if (!email.trim()) {
-        return '이메일을 입력해주세요';
-    }
-    if (!VALIDATION.EMAIL_REGEX.test(email)) {
-        return '올바른 이메일 형식을 입력해주세요';
-    }
-    return null;
+    return VALIDATION.EMAIL_REGEX.test(email);
 }
 
 function validatePassword(password) {
-    if (!password) {
-        return '비밀번호를 입력해주세요';
-    }
-    if (password.length < VALIDATION.MIN_PASSWORD_LENGTH) {
-        return `비밀번호는 최소 ${VALIDATION.MIN_PASSWORD_LENGTH}자 이상이어야 합니다`;
-    }
-    return null;
+    return password && password.length >= VALIDATION.MIN_PASSWORD_LENGTH;
 }
 
-function validateConfirmPassword(password, confirmPassword) {
-    if (!confirmPassword) {
-        return '비밀번호 확인을 입력해주세요';
-    }
-    if (password !== confirmPassword) {
-        return '비밀번호가 일치하지 않습니다';
-    }
-    return null;
-}
-
-function validateLoginForm(formData) {
+function validateLoginForm(email, password) {
     const errors = {};
     
-    const emailError = validateEmail(formData.email);
-    if (emailError) errors.email = emailError;
-    
-    if (!formData.password) {
-        errors.password = '비밀번호를 입력해주세요';
+    if (!email) {
+        errors.email = '이메일을 입력해주세요.';
+    } else if (!validateEmail(email)) {
+        errors.email = '올바른 이메일 형식을 입력해주세요.';
     }
     
-    return errors;
+    if (!password) {
+        errors.password = '비밀번호를 입력해주세요.';
+    }
+    
+    return {
+        isValid: Object.keys(errors).length === 0,
+        errors: errors
+    };
 }
 
 function validateRegisterForm(formData) {
     const errors = {};
     
-    const emailError = validateEmail(formData.email);
-    if (emailError) errors.email = emailError;
-    
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) errors.password = passwordError;
-    
-    const confirmPasswordError = validateConfirmPassword(formData.password, formData.confirmPassword);
-    if (confirmPasswordError) errors.confirmPassword = confirmPasswordError;
-    
-    if (!formData.department) errors.department = '부서를 선택해주세요';
-    if (!formData.jobPosition) errors.jobRole = '직급을 선택해주세요';
-    
-    return errors;
-}
-
-function validateFormField(input) {
-    const value = input.value.trim();
-    let error = null;
-    
-    switch (input.name) {
-        case 'email':
-            error = validateEmail(value);
-            break;
-        case 'password':
-            if (input.form.id === 'login-form') {
-                error = value ? null : '비밀번호를 입력해주세요';
-            } else {
-                error = validatePassword(value);
-            }
-            break;
+    if (!formData.email) {
+        errors.email = '이메일을 입력해주세요.';
+    } else if (!validateEmail(formData.email)) {
+        errors.email = '올바른 이메일 형식을 입력해주세요.';
     }
     
-    if (error) {
-        addInputError(input, error);
-    } else {
-        input.classList.remove('error');
-        const errorElement = document.getElementById(`${input.name}-error`);
-        if (errorElement) {
-            errorElement.classList.add('hidden');
-        }
+    if (!formData.password) {
+        errors.password = '비밀번호를 입력해주세요.';
+    } else if (!validatePassword(formData.password)) {
+        errors.password = `비밀번호는 최소 ${VALIDATION.MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`;
     }
-}
-
-function showValidationErrors(errors, form) {
-    clearFormErrors(form);
     
-    Object.entries(errors).forEach(([field, message]) => {
-        const input = form.querySelector(`[name="${field}"]`);
-        if (input) {
-            addInputError(input, message);
-        }
-    });
+    if (!formData.confirmPassword) {
+        errors.confirmPassword = '비밀번호 확인을 입력해주세요.';
+    } else if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = '비밀번호가 일치하지 않습니다.';
+    }
+    
+    if (!formData.department) {
+        errors.department = '부서를 선택해주세요.';
+    }
+    
+    if (!formData.jobPosition) {
+        errors.jobPosition = '직급을 선택해주세요.';
+    }
+    
+    return {
+        isValid: Object.keys(errors).length === 0,
+        errors: errors
+    };
 }
 
-function hasValidationErrors(errors) {
-    return Object.keys(errors).length > 0;
+function validatePostForm(title, content) {
+    const errors = {};
+    
+    if (!title || title.trim().length === 0) {
+        errors.title = '제목을 입력해주세요.';
+    } else if (title.length > 200) {
+        errors.title = '제목은 200자 이하로 입력해주세요.';
+    }
+    
+    if (!content || content.trim().length === 0) {
+        errors.content = '내용을 입력해주세요.';
+    } else if (content.length < 10) {
+        errors.content = '내용은 최소 10자 이상 입력해주세요.';
+    }
+    
+    return {
+        isValid: Object.keys(errors).length === 0,
+        errors: errors
+    };
+}
+
+function validateCommentForm(content) {
+    const errors = {};
+    
+    if (!content || content.trim().length === 0) {
+        errors.content = '댓글 내용을 입력해주세요.';
+    } else if (content.length < 2) {
+        errors.content = '댓글은 최소 2자 이상 입력해주세요.';
+    } else if (content.length > 1000) {
+        errors.content = '댓글은 1000자 이하로 입력해주세요.';
+    }
+    
+    return {
+        isValid: Object.keys(errors).length === 0,
+        errors: errors
+    };
 }
 
 console.log('Validation loaded');

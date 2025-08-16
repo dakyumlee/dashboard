@@ -6,6 +6,15 @@ const ENDPOINTS = {
         REGISTER: '/auth/register',
         LOGOUT: '/auth/logout',
         ME: '/auth/me'
+    },
+    POSTS: {
+        LIST: '/posts',
+        CREATE: '/posts',
+        DETAIL: '/posts',
+        UPDATE: '/posts',
+        DELETE: '/posts',
+        SEARCH: '/posts/search',
+        LIKE: '/posts'
     }
 };
 
@@ -18,13 +27,17 @@ const MESSAGES = {
     NETWORK_ERROR: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
     UNAUTHORIZED: '로그인이 필요합니다.',
     SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-    LOGIN_SUCCESS: '로그인되었습니다!',
     REGISTER_SUCCESS: '회원가입이 완료되었습니다!'
 };
 
 const VALIDATION = {
     EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     MIN_PASSWORD_LENGTH: 8
+};
+
+const PAGINATION = {
+    DEFAULT_SIZE: 10,
+    MAX_SIZE: 50
 };
 
 const DEPARTMENTS = [
@@ -36,11 +49,5 @@ const JOB_ROLES = [
     '신입', '주니어', '시니어', '리드', 
     '매니저', '디렉터', '임원', '기타'
 ];
-
-const PAGINATION = {
-    DEFAULT_PAGE: 1,
-    DEFAULT_SIZE: 10,
-    MAX_SIZE: 50
-};
 
 console.log('Constants loaded');

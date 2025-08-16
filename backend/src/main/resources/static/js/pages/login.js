@@ -1,6 +1,4 @@
 function initLoginPage() {
-    console.log('Initializing login page...');
-    
     if (Auth.redirectIfAuthenticated()) {
         return;
     }
@@ -10,30 +8,14 @@ function initLoginPage() {
 
 function setupLoginForm() {
     const form = document.getElementById('login-form');
-    const submitBtn = document.getElementById('submit-btn');
     
-    if (!form) {
-        console.error('Login form not found');
-        return;
-    }
+    if (!form) return;
 
-    console.log('Setting up login form...');
     form.addEventListener('submit', handleLogin);
-    
-    const inputs = form.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('blur', () => validateFormField(input));
-        input.addEventListener('input', () => {
-            if (input.classList.contains('error')) {
-                validateFormField(input);
-            }
-        });
-    });
 }
 
 async function handleLogin(e) {
     e.preventDefault();
-    console.log('Login form submitted');
     
     const form = e.target;
     const submitBtn = document.getElementById('submit-btn');
@@ -45,13 +27,18 @@ async function handleLogin(e) {
         password: form.password.value
     };
 
-    console.log('Form data:', { email: formData.email, password: '***' });
-
-    const errors = validateLoginForm(formData);
+    const validation = validateLoginForm(formData.email, formData.password);
     
-    if (hasValidationErrors(errors)) {
-        console.log('Validation errors:', errors);
-        showValidationErrors(errors, form);
+    if (!validation.isValid) {
+        clearFormErrors(form);
+        
+        Object.keys(validation.errors).forEach(field => {
+            const input = form[field];
+            const message = validation.errors[field];
+            if (input) {
+                addInputError(input, message);
+            }
+        });
         return;
     }
 
@@ -59,21 +46,15 @@ async function handleLogin(e) {
         setLoading(submitBtn, true);
         hideElement(errorBanner);
         
-        console.log('Attempting login...');
         await AuthAPI.login(formData);
         
-        console.log('Login successful!');
-        showNotification(MESSAGES.LOGIN_SUCCESS || '로그인 성공!', 'success');
-        
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
+        window.location.href = 'index.html';
         
     } catch (error) {
         console.error('Login error:', error);
         
         if (errorMessage) {
-            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR || '서버 오류가 발생했습니다';
+            errorMessage.textContent = error.message || 'Login failed';
         }
         showElement(errorBanner);
         
@@ -87,5 +68,3 @@ if (document.readyState === 'loading') {
 } else {
     initLoginPage();
 }
-
-console.log('Login script loaded');

@@ -5,6 +5,9 @@ import com.community.dto.request.RegisterRequest;
 import com.community.dto.response.LoginResponse;
 import com.community.dto.response.UserResponse;
 import com.community.service.AuthService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +19,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
@@ -23,14 +27,17 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
-            System.out.println("로그인 요청: " + request.getEmail());
+            logger.info("로그인 요청 - 이메일: {}", request.getEmail());
+            
             LoginResponse response = authService.login(request);
-            System.out.println("로그인 성공: " + response.getEmail());
+            logger.info("로그인 성공 - 이메일: {}", request.getEmail());
+            
             return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            System.err.println("로그인 오류: " + e.getMessage());
+            logger.error("로그인 실패 - 이메일: {}, 오류: {}", request.getEmail(), e.getMessage());
             
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", e.getMessage());
@@ -40,20 +47,30 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            System.out.println("회원가입 요청: " + request.getEmail());
+            logger.info("회원가입 요청 - 이메일: {}", request.getEmail());
+            
             UserResponse response = authService.register(request);
-            System.out.println("회원가입 성공: " + response.getEmail());
+            logger.info("회원가입 성공 - 이메일: {}", request.getEmail());
+            
             return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            System.err.println("회원가입 오류: " + e.getMessage());
+            logger.error("회원가입 실패 - 이메일: {}, 오류: {}", request.getEmail(), e.getMessage());
             
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", e.getMessage());
             
             return ResponseEntity.status(400).body(errorResponse);
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout() {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "로그아웃되었습니다");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/test")
