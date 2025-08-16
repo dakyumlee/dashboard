@@ -28,6 +28,19 @@ function validateConfirmPassword(password, confirmPassword) {
     return null;
 }
 
+function validateLoginForm(formData) {
+    const errors = {};
+    
+    const emailError = validateEmail(formData.email);
+    if (emailError) errors.email = emailError;
+    
+    if (!formData.password) {
+        errors.password = '비밀번호를 입력해주세요';
+    }
+    
+    return errors;
+}
+
 function validateRegisterForm(formData) {
     const errors = {};
     
@@ -44,6 +57,34 @@ function validateRegisterForm(formData) {
     if (!formData.jobPosition) errors.jobRole = '직급을 선택해주세요';
     
     return errors;
+}
+
+function validateFormField(input) {
+    const value = input.value.trim();
+    let error = null;
+    
+    switch (input.name) {
+        case 'email':
+            error = validateEmail(value);
+            break;
+        case 'password':
+            if (input.form.id === 'login-form') {
+                error = value ? null : '비밀번호를 입력해주세요';
+            } else {
+                error = validatePassword(value);
+            }
+            break;
+    }
+    
+    if (error) {
+        addInputError(input, error);
+    } else {
+        input.classList.remove('error');
+        const errorElement = document.getElementById(`${input.name}-error`);
+        if (errorElement) {
+            errorElement.classList.add('hidden');
+        }
+    }
 }
 
 function showValidationErrors(errors, form) {

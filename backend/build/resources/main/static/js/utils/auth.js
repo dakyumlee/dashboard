@@ -19,7 +19,7 @@ const Auth = {
     logout() {
         localStorage.removeItem(STORAGE_KEYS.TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER);
-        window.location.href = 'login.html';
+        this.updateHeaderUI();
     },
 
     isAuthenticated() {
@@ -44,13 +44,20 @@ const Auth = {
 
     updateHeaderUI() {
         const user = this.getUser();
-        updateHeaderForUser(user);
-    },
-
-    isAdmin() {
-        const user = this.getUser();
-        return user ? user.isAdmin : false;
+        if (typeof updateHeaderForUser === 'function') {
+            updateHeaderForUser(user);
+        }
     }
 };
+
+function toggleElement(element, show) {
+    if (element) {
+        if (show) {
+            element.classList.remove('hidden');
+        } else {
+            element.classList.add('hidden');
+        }
+    }
+}
 
 console.log('Auth loaded');

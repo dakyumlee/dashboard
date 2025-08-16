@@ -1,58 +1,41 @@
 package com.community.entity;
 
 import jakarta.persistence.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "users")
-@EntityListeners(AuditingEntityListener.class)
+@Table(name = "USERS")
 public class User {
-
+    
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(name = "user_seq", sequenceName = "user_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_seq")
+    @SequenceGenerator(name = "users_seq", sequenceName = "USERS_SEQ", allocationSize = 1)
+    @Column(name = "ID")
     private Long id;
-
-    @Column(unique = true, nullable = false, length = 1020)
+    
+    @Column(name = "EMAIL", nullable = false, unique = true)
     private String email;
-
-    @Column(nullable = false, length = 1020)
+    
+    @Column(name = "PASSWORD", nullable = false)
     private String password;
-
-    @Column(nullable = false, length = 1020)
+    
+    @Column(name = "DEPARTMENT")
     private String department;
-
-    @Column(name = "job_position", nullable = false, length = 1020)
+    
+    @Column(name = "JOB_POSITION")
     private String jobPosition;
-
-    @Column(unique = true, nullable = false, length = 1020)
+    
+    @Column(name = "NICKNAME")
     private String nickname;
-
-    @Column(nullable = false)
+    
+    @Column(name = "ROLE")
     private String role = "USER";
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    
+    @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
+    
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Post> posts = new ArrayList<>();
-
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Like> likes = new ArrayList<>();
 
     public User() {}
 
@@ -62,18 +45,20 @@ public class User {
         this.department = department;
         this.jobPosition = jobPosition;
         this.nickname = nickname;
+        this.role = "USER";
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public Boolean getIsAdmin() {
-        return "ADMIN".equals(this.role);
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -124,6 +109,18 @@ public class User {
         this.nickname = nickname;
     }
 
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public Boolean getIsAdmin() {
+        return "ADMIN".equals(this.role);
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -138,29 +135,5 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public List<Post> getPosts() {
-        return posts;
-    }
-
-    public void setPosts(List<Post> posts) {
-        this.posts = posts;
-    }
-
-    public List<Comment> getComments() {
-        return comments;
-    }
-
-    public void setComments(List<Comment> comments) {
-        this.comments = comments;
-    }
-
-    public List<Like> getLikes() {
-        return likes;
-    }
-
-    public void setLikes(List<Like> likes) {
-        this.likes = likes;
     }
 }

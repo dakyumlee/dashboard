@@ -44,8 +44,10 @@ public class AuthService {
                 });
 
         logger.debug("사용자 찾음 - ID: {}, 이메일: {}", user.getId(), user.getEmail());
+        logger.debug("입력된 비밀번호: {}", request.getPassword());
+        logger.debug("DB 저장된 비밀번호: {}", user.getPassword());
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!request.getPassword().equals(user.getPassword())) {
             logger.warn("비밀번호 불일치 - 사용자 ID: {}", user.getId());
             throw new CustomException("이메일 또는 비밀번호가 올바르지 않습니다");
         }
@@ -64,7 +66,7 @@ public class AuthService {
             throw new CustomException("이미 가입된 이메일입니다");
         }
 
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        String encodedPassword = request.getPassword();
         String nickname = nicknameGenerator.generateNickname(request.getDepartment());
 
         logger.debug("닉네임 생성 완료: {}", nickname);
