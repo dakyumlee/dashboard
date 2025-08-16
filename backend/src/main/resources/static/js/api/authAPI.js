@@ -1,25 +1,19 @@
 const AuthAPI = {
     async login(credentials) {
         try {
-            console.log('Sending login request:', credentials);
             const response = await APIClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
-            console.log('Login response:', response);
             
-            if (response.success && response.data) {
-                const userData = response.data;
-                Auth.setToken(userData.token);
+            if (response.token) {
+                Auth.setToken(response.token);
                 Auth.setUser({
-                    email: userData.email,
-                    nickname: userData.nickname,
-                    isAdmin: userData.isAdmin
+                    email: response.email,
+                    nickname: response.nickname,
+                    isAdmin: response.isAdmin
                 });
-                
-                console.log('User logged in:', userData);
             }
             
             return response;
         } catch (error) {
-            console.error('Login API error:', error);
             throw error;
         }
     },
@@ -38,8 +32,6 @@ const AuthAPI = {
 
     async logout() {
         try {
-            const response = await APIClient.post(ENDPOINTS.AUTH.LOGOUT);
-            console.log('Logout response:', response);
         } catch (error) {
             console.error('Logout API error:', error);
         } finally {
@@ -51,20 +43,16 @@ const AuthAPI = {
         try {
             const response = await APIClient.get(ENDPOINTS.AUTH.ME);
             
-            if (response.success && response.data) {
-                const userData = response.data;
+            if (response) {
                 Auth.setUser({
-                    email: userData.email,
-                    nickname: userData.nickname,
-                    isAdmin: userData.isAdmin
+                    email: response.email,
+                    nickname: response.nickname,
+                    isAdmin: response.isAdmin
                 });
-                
-                return userData;
             }
             
             return response;
         } catch (error) {
-            console.error('Get current user error:', error);
             Auth.logout();
             throw error;
         }

@@ -13,16 +13,6 @@ function setupLoginForm() {
     if (!form) return;
 
     form.addEventListener('submit', handleLogin);
-    
-    const inputs = form.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('blur', () => validateFormField(input));
-        input.addEventListener('input', () => {
-            if (input.classList.contains('error')) {
-                validateFormField(input);
-            }
-        });
-    });
 }
 
 async function handleLogin(e) {
@@ -38,10 +28,11 @@ async function handleLogin(e) {
         password: form.password.value
     };
 
-    const errors = validateLoginForm(formData);
-    
-    if (hasValidationErrors(errors)) {
-        showValidationErrors(errors, form);
+    if (!formData.email || !formData.password) {
+        if (errorMessage) {
+            errorMessage.textContent = '이메일과 비밀번호를 입력해주세요.';
+        }
+        showElement(errorBanner);
         return;
     }
 
@@ -49,23 +40,19 @@ async function handleLogin(e) {
         setLoading(submitBtn, true);
         hideElement(errorBanner);
         
-        const response = await AuthAPI.login(formData);
+        await AuthAPI.login(formData);
         
-        if (response.success) {
-            showToast(MESSAGES.LOGIN_SUCCESS, 'success');
-            
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-        } else {
-            throw new Error(response.message || '로그인에 실패했습니다.');
-        }
+        showNotification('로그인이 완료되었습니다!', 'success');
+        
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
         
     } catch (error) {
         console.error('Login error:', error);
         
         if (errorMessage) {
-            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR;
+            errorMessage.textContent = error.message || '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
         }
         showElement(errorBanner);
         

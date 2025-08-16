@@ -1,5 +1,3 @@
-const API_BASE_URL = 'http://localhost:8080/api';
-
 const APIClient = {
     async request(method, url, data = null) {
         const config = {
@@ -9,9 +7,11 @@ const APIClient = {
             },
         };
 
-        const token = Auth.getToken();
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+        if (typeof Auth !== 'undefined') {
+            const token = Auth.getToken();
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
         }
 
         if (data) {
@@ -23,7 +23,9 @@ const APIClient = {
             
             if (!response.ok) {
                 if (response.status === 401) {
-                    Auth.logout();
+                    if (typeof Auth !== 'undefined') {
+                        Auth.logout();
+                    }
                     throw new Error('로그인이 필요합니다');
                 }
                 
