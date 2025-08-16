@@ -20,100 +20,84 @@ function toggleElement(element, show) {
     }
 }
 
-function setLoading(button, loading = true) {
+function setLoading(button, isLoading) {
     if (!button) return;
     
-    if (loading) {
+    if (isLoading) {
         button.disabled = true;
-        button.dataset.originalText = button.textContent;
-        button.textContent = '처리 중...';
+        button.textContent = '처리중...';
     } else {
         button.disabled = false;
-        button.textContent = button.dataset.originalText || button.textContent;
+        button.textContent = button.getAttribute('data-original-text') || '확인';
     }
 }
 
 function showNotification(message, type = 'info') {
+    console.log(`${type.toUpperCase()}: ${message}`);
+    
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
     
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-        color: white;
-        border-radius: 4px;
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-    `;
-    
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        notification.remove();
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
     }, 3000);
 }
 
-function clearFormErrors(form) {
-    const errorElements = form.querySelectorAll('.error-message');
-    errorElements.forEach(element => {
-        element.classList.add('hidden');
-        element.textContent = '';
-    });
+function validateFormField(input) {
+    const value = input.value.trim();
+    const type = input.type;
+    const name = input.name;
     
-    const inputElements = form.querySelectorAll('.form-control');
-    inputElements.forEach(element => element.classList.remove('error'));
-}
-
-function addInputError(input, message) {
-    input.classList.add('error');
-    const errorElement = document.getElementById(`${input.name}-error`);
-    if (errorElement) {
-        errorElement.textContent = message;
-        errorElement.classList.remove('hidden');
-    }
-}
-
-function removeInputError(input) {
     input.classList.remove('error');
-    const errorElement = document.getElementById(`${input.name}-error`);
-    if (errorElement) {
-        errorElement.textContent = '';
-        errorElement.classList.add('hidden');
+    
+    if (!value) {
+        input.classList.add('error');
+        return false;
     }
+    
+    if (type === 'email' && !VALIDATION.EMAIL_REGEX.test(value)) {
+        input.classList.add('error');
+        return false;
+    }
+    
+    if (name === 'password' && value.length < VALIDATION.MIN_PASSWORD_LENGTH) {
+        input.classList.add('error');
+        return false;
+    }
+    
+    return true;
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+function validateLoginForm(formData) {
+    const errors = {};
     
-    if (diffMins < 1) return '방금 전';
-    if (diffMins < 60) return `${diffMins}분 전`;
-    if (diffHours < 24) return `${diffHours}시간 전`;
-    if (diffDays < 7) return `${diffDays}일 전`;
+    if (!formData.email || !VALIDATION.EMAIL_REGEX.test(formData.email)) {
+        errors.email = '유효한 이메일을 입력해주세요';
+    }
     
-    return date.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+    if (!formData.password || formData.password.length < VALIDATION.MIN_PASSWORD_LENGTH) {
+        errors.password = `비밀번호는 ${VALIDATION.MIN_PASSWORD_LENGTH}자 이상이어야 합니다`;
+    }
+    
+    return errors;
+}
+
+function hasValidationErrors(errors) {
+    return Object.keys(errors).length > 0;
+}
+
+function showValidationErrors(errors, form) {
+    Object.keys(errors).forEach(field => {
+        const input = form.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.classList.add('error');
+        }
     });
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+console.log('Helpers loaded');

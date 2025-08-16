@@ -1,8 +1,30 @@
 const AuthAPI = {
+    async login(credentials) {
+        try {
+            console.log('Login request:', credentials);
+            const response = await apiClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
+            console.log('Login response:', response);
+            
+            if (response.token) {
+                Auth.setToken(response.token);
+                Auth.setUser({
+                    email: response.email,
+                    nickname: response.nickname,
+                    isAdmin: response.isAdmin
+                });
+            }
+            
+            return response;
+        } catch (error) {
+            console.error('Login API error:', error);
+            throw error;
+        }
+    },
+
     async register(userData) {
         try {
-            console.log('Sending register request:', userData);
-            const response = await APIClient.post(ENDPOINTS.AUTH.REGISTER, userData);
+            console.log('Register request:', userData);
+            const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, userData);
             console.log('Register response:', response);
             return response;
         } catch (error) {
@@ -11,37 +33,41 @@ const AuthAPI = {
         }
     },
 
-    async login(loginData) {
+    async logout() {
         try {
-            console.log('Sending login request:', loginData);
-            const response = await APIClient.post(ENDPOINTS.AUTH.LOGIN, loginData);
-            console.log('Login response:', response);
-            return response;
+            console.log('Logout requested');
         } catch (error) {
-            console.error('Login API error:', error);
-            throw error;
+            console.error('Logout API error:', error);
+        } finally {
+            Auth.logout();
         }
     },
 
     async getCurrentUser() {
         try {
-            const response = await APIClient.get(ENDPOINTS.AUTH.ME);
+            const response = await apiClient.get(ENDPOINTS.AUTH.ME);
+            
+            if (response) {
+                Auth.setUser({
+                    email: response.email,
+                    nickname: response.nickname,
+                    isAdmin: response.isAdmin
+                });
+            }
+            
             return response;
         } catch (error) {
+            Auth.logout();
             throw error;
         }
     },
 
-    async logout() {
+    async checkTokenValidity() {
         try {
-            await APIClient.post(ENDPOINTS.AUTH.LOGOUT);
-            Auth.setToken(null);
-            Auth.setUser(null);
-            localStorage.removeItem(STORAGE_KEYS.TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.USER);
-            window.location.href = 'index.html';
+            await this.getCurrentUser();
+            return true;
         } catch (error) {
-            console.error('Logout error:', error);
+            return false;
         }
     }
 };

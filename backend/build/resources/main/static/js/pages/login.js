@@ -1,74 +1,91 @@
-async function loginUser(loginData) {
-    try {
-        const response = await AuthAPI.login(loginData);
-        
-        Auth.setToken(response.token);
-        Auth.setUser({
-            email: response.email,
-            nickname: response.nickname,
-            isAdmin: response.isAdmin
-        });
-        
-        alert('로그인이 완료되었습니다!');
-        window.location.href = 'index.html';
-        
-        return response;
-    } catch (error) {
-        console.error('Login error:', error);
-        showError(error.message || '로그인 중 오류가 발생했습니다.');
-        throw error;
-    }
-}
-
-function showError(message) {
-    const errorBanner = document.getElementById('error-banner');
-    const errorMessage = document.getElementById('error-message');
-    if (errorBanner && errorMessage) {
-        errorMessage.textContent = message;
-        errorBanner.classList.remove('hidden');
-    }
-}
-
-function hideError() {
-    const errorBanner = document.getElementById('error-banner');
-    if (errorBanner) {
-        errorBanner.classList.add('hidden');
-    }
-}
-
 function initLoginPage() {
+    console.log('Initializing login page...');
+    
     if (Auth.redirectIfAuthenticated()) {
         return;
     }
 
-    const loginForm = document.getElementById('login-form');
+    setupLoginForm();
+}
+
+function setupLoginForm() {
+    const form = document.getElementById('login-form');
+    const submitBtn = document.getElementById('submit-btn');
     
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            hideError();
-            
-            const formData = new FormData(this);
-            const loginData = {
-                email: formData.get('email'),
-                password: formData.get('password')
-            };
-            
-            console.log('Form submitted with data:', loginData);
-            
-            if (!loginData.email || !loginData.password) {
-                showError('이메일과 비밀번호를 모두 입력해주세요.');
-                return;
+    if (!form) {
+        console.error('Login form not found');
+        return;
+    }
+
+    console.log('Setting up login form...');
+    form.addEventListener('submit', handleLogin);
+    
+    const inputs = form.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('blur', () => validateFormField(input));
+        input.addEventListener('input', () => {
+            if (input.classList.contains('error')) {
+                validateFormField(input);
             }
-            
-            await loginUser(loginData);
         });
+    });
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    console.log('Login form submitted');
+    
+    const form = e.target;
+    const submitBtn = document.getElementById('submit-btn');
+    const errorBanner = document.getElementById('error-banner');
+    const errorMessage = document.getElementById('error-message');
+    
+    const formData = {
+        email: form.email.value.trim(),
+        password: form.password.value
+    };
+
+    console.log('Form data:', { email: formData.email, password: '***' });
+
+    const errors = validateLoginForm(formData);
+    
+    if (hasValidationErrors(errors)) {
+        console.log('Validation errors:', errors);
+        showValidationErrors(errors, form);
+        return;
+    }
+
+    try {
+        setLoading(submitBtn, true);
+        hideElement(errorBanner);
+        
+        console.log('Attempting login...');
+        await AuthAPI.login(formData);
+        
+        console.log('Login successful!');
+        showNotification(MESSAGES.LOGIN_SUCCESS || '로그인 성공!', 'success');
+        
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        
+        if (errorMessage) {
+            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR || '서버 오류가 발생했습니다';
+        }
+        showElement(errorBanner);
+        
+    } finally {
+        setLoading(submitBtn, false);
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Login page DOM loaded');
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLoginPage);
+} else {
     initLoginPage();
-});
+}
 
-console.log('Login page script loaded');
+console.log('Login script loaded');

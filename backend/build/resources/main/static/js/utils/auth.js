@@ -1,74 +1,56 @@
 const Auth = {
-    currentUser: null,
-
-    async getCurrentUser() {
-        if (this.currentUser) {
-            return this.currentUser;
-        }
-        
-        try {
-            const response = await AuthAPI.getCurrentUser();
-            this.currentUser = response;
-            return response;
-        } catch (error) {
-            this.currentUser = null;
-            return null;
-        }
+    getToken() {
+        return localStorage.getItem(STORAGE_KEYS.TOKEN);
     },
 
-    setCurrentUser(user) {
-        this.currentUser = user;
+    setToken(token) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, token);
     },
 
-    clearCurrentUser() {
-        this.currentUser = null;
+    getUser() {
+        const userData = localStorage.getItem(STORAGE_KEYS.USER);
+        return userData ? JSON.parse(userData) : null;
     },
 
-    async isAuthenticated() {
-        try {
-            const user = await this.getCurrentUser();
-            return !!user;
-        } catch (error) {
-            return false;
-        }
+    setUser(user) {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     },
 
-    async requireAuth() {
-        const isAuth = await this.isAuthenticated();
-        if (!isAuth) {
-            window.location.href = 'login.html';
-            return false;
-        }
-        return true;
+    logout() {
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        window.location.href = 'login.html';
     },
 
-    async redirectIfAuthenticated() {
-        const isAuth = await this.isAuthenticated();
-        if (isAuth) {
+    isAuthenticated() {
+        return !!this.getToken();
+    },
+
+    redirectIfAuthenticated() {
+        if (this.isAuthenticated()) {
             window.location.href = 'index.html';
             return true;
         }
         return false;
     },
 
-    async updateHeaderUI() {
-        try {
-            const user = await this.getCurrentUser();
-            updateHeaderForUser(user);
-        } catch (error) {
-            updateHeaderForUser(null);
+    redirectIfNotAuthenticated() {
+        if (!this.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return true;
         }
+        return false;
     },
 
-    async logout() {
-        try {
-            await AuthAPI.logout();
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            this.clearCurrentUser();
-            updateHeaderForUser(null);
-            window.location.href = 'login.html';
-        }
+    updateHeaderUI() {
+        const user = this.getUser();
+        updateHeaderForUser(user);
+    },
+
+    isAdmin() {
+        const user = this.getUser();
+        return user ? user.isAdmin : false;
     }
 };
+
+console.log('Auth loaded');
