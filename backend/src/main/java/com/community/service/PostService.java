@@ -46,7 +46,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getAllPosts(int page, int size, String currentUserEmail) {
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(page, size);
         Page<Post> postsPage = postRepository.findAllOrderByCreatedAtDesc(pageable);
 
         List<PostListResponse> posts = postsPage.getContent().stream()
@@ -55,11 +55,14 @@ public class PostService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("posts", posts);
+        response.put("content", posts);
         response.put("currentPage", postsPage.getNumber() + 1);
         response.put("totalPages", postsPage.getTotalPages());
         response.put("totalElements", postsPage.getTotalElements());
         response.put("hasNext", postsPage.hasNext());
         response.put("hasPrevious", postsPage.hasPrevious());
+        response.put("first", postsPage.isFirst());
+        response.put("last", postsPage.isLast());
 
         return response;
     }
@@ -103,7 +106,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> searchPosts(String keyword, int page, int size, String currentUserEmail) {
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(page, size);
         Page<Post> postsPage = postRepository.findByTitleContainingOrContentContainingOrderByCreatedAtDesc(keyword, pageable);
 
         List<PostListResponse> posts = postsPage.getContent().stream()
@@ -112,12 +115,15 @@ public class PostService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("posts", posts);
+        response.put("content", posts);
         response.put("keyword", keyword);
         response.put("currentPage", postsPage.getNumber() + 1);
         response.put("totalPages", postsPage.getTotalPages());
         response.put("totalElements", postsPage.getTotalElements());
         response.put("hasNext", postsPage.hasNext());
         response.put("hasPrevious", postsPage.hasPrevious());
+        response.put("first", postsPage.isFirst());
+        response.put("last", postsPage.isLast());
 
         return response;
     }

@@ -9,6 +9,187 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/pages.css">
     <link rel="stylesheet" href="css/responsive.css">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .page-header h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .text-muted {
+            color: #666;
+            margin: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 0;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-banner {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+        }
+        .posts-list {
+            margin-bottom: 40px;
+        }
+        .post-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .post-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+        }
+        .post-header {
+            margin-bottom: 10px;
+        }
+        .post-title {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .post-meta {
+            color: #666;
+            font-size: 14px;
+        }
+        .post-content {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .post-stats {
+            display: flex;
+            gap: 20px;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 40px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #f8f9fa;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn.btn-primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .btn.btn-primary:hover {
+            background: #0056b3;
+        }
+        .btn.btn-outline {
+            background: transparent;
+        }
+        .btn.btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        .btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .page-numbers {
+            display: flex;
+            gap: 5px;
+        }
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0;
+        }
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+        .logo {
+            text-decoration: none;
+            color: #333;
+        }
+        .logo h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #007bff;
+        }
+        .nav {
+            display: flex;
+            gap: 10px;
+        }
+        .main-content {
+            min-height: calc(100vh - 80px);
+            background: #f8f9fa;
+            padding: 20px 0;
+        }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -38,7 +219,7 @@
                 <p class="text-muted">자유롭게 소통해보세요!</p>
             </div>
 
-            <div class="loading" id="loading">
+            <div class="loading hidden" id="loading">
                 <div class="spinner"></div>
                 <p>게시글을 불러오는 중...</p>
             </div>
@@ -54,290 +235,232 @@
                 <a href="create-post.html" class="btn btn-primary">글쓰기</a>
             </div>
 
-            <div id="post-list"></div>
+            <div class="posts-section hidden" id="posts-section">
+                <div class="posts-list" id="posts-list">
+                </div>
 
-            <div class="pagination hidden" id="pagination">
-                <button class="btn btn-outline btn-sm" id="prev-btn" disabled>이전</button>
-                <div class="page-numbers" id="page-numbers"></div>
-                <button class="btn btn-outline btn-sm" id="next-btn">다음</button>
+                <div class="pagination hidden" id="pagination">
+                    <button class="btn btn-outline btn-sm" id="prev-btn" disabled>이전</button>
+                    <div class="page-numbers" id="page-numbers"></div>
+                    <button class="btn btn-outline btn-sm" id="next-btn">다음</button>
+                </div>
             </div>
         </div>
     </main>
 
     <script>
-        (function() {
-            const API_BASE_URL = 'http://localhost:8080/api';
-            let currentUser = null;
-            let currentPage = 1;
-            let totalPages = 1;
+        const API_BASE_URL = 'http://localhost:8080/api';
+        let currentPage = 0;
+        const pageSize = 10;
+        let totalPages = 0;
 
-            document.addEventListener('DOMContentLoaded', function() {
-                initHomePage();
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('posts-section').classList.add('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('error-banner').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-banner').classList.remove('hidden');
+            document.getElementById('posts-section').classList.add('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+        }
+
+        function showEmpty() {
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('posts-section').classList.add('hidden');
+            document.getElementById('error-banner').classList.add('hidden');
+        }
+
+        function showPosts() {
+            document.getElementById('posts-section').classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('error-banner').classList.add('hidden');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) return '방금 전';
+            if (diffMins < 60) return `${diffMins}분 전`;
+            if (diffHours < 24) return `${diffHours}시간 전`;
+            if (diffDays < 7) return `${diffDays}일 전`;
+            
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function renderPost(post) {
+            const content = post.content || '';
+            const displayContent = content.length > 100 ? content.substring(0, 100) + '...' : content;
+            
+            return `
+                <div class="post-item" onclick="goToPost(${post.id})">
+                    <div class="post-header">
+                        <h3 class="post-title">${post.title}</h3>
+                        <span class="post-meta">${post.authorNickname} · ${formatDate(post.createdAt)}</span>
+                    </div>
+                    ${content ? `<div class="post-content">${displayContent}</div>` : ''}
+                    <div class="post-stats">
+                        <span class="stat-item">
+                            <i class="icon-heart"></i>
+                            <span>${post.likeCount || 0}</span>
+                        </span>
+                        <span class="stat-item">
+                            <i class="icon-comment"></i>
+                            <span>${post.commentCount || 0}</span>
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPagination() {
+            const paginationElement = document.getElementById('pagination');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const pageNumbers = document.getElementById('page-numbers');
+
+            if (totalPages <= 1) {
+                paginationElement.classList.add('hidden');
+                return;
+            }
+
+            paginationElement.classList.remove('hidden');
+            
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage >= totalPages - 1;
+
+            let pageNumbersHtml = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(0, endPage - maxVisiblePages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage ? 'active' : '';
+                pageNumbersHtml += `
+                    <button class="btn btn-sm btn-outline ${isActive}" onclick="loadPosts(${i})">
+                        ${i + 1}
+                    </button>
+                `;
+            }
+
+            pageNumbers.innerHTML = pageNumbersHtml;
+        }
+
+        function goToPost(postId) {
+            window.location.href = `post-detail.html?id=${postId}`;
+        }
+
+        async function loadPosts(page = 0) {
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE_URL}/posts?page=${page}&size=${pageSize}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                hideLoading();
+
+                if (!data.posts || data.posts.length === 0) {
+                    showEmpty();
+                    return;
+                }
+
+                currentPage = page;
+                totalPages = data.totalPages;
+
+                const postsListElement = document.getElementById('posts-list');
+                postsListElement.innerHTML = data.posts.map(post => renderPost(post)).join('');
+                
+                renderPagination();
+                showPosts();
+
+            } catch (error) {
+                console.error('게시글 로딩 실패:', error);
+                hideLoading();
+                showError(`게시글을 불러오는데 실패했습니다: ${error.message}`);
+            }
+        }
+
+        function checkAuthAndUpdateNav() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            if (token && user) {
+                try {
+                    const userData = JSON.parse(user);
+                    document.getElementById('nav-guest').classList.add('hidden');
+                    document.getElementById('nav-user').classList.remove('hidden');
+                    document.getElementById('user-nickname').textContent = userData.nickname;
+                    
+                    if (userData.role === 'ADMIN') {
+                        document.getElementById('admin-link').classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('사용자 정보 파싱 실패:', error);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
+            } else {
+                document.getElementById('nav-guest').classList.remove('hidden');
+                document.getElementById('nav-user').classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.reload();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndUpdateNav();
+            loadPosts(0);
+
+            document.getElementById('retry-btn').addEventListener('click', () => {
+                loadPosts(currentPage);
             });
 
-            function initHomePage() {
-                checkAuthStatus();
-                loadPosts();
-                setupEventListeners();
-            }
-
-            function checkAuthStatus() {
-                const token = localStorage.getItem('token');
-                if (token) {
-                    try {
-                        const payload = JSON.parse(atob(token.split('.')[1]));
-                        currentUser = {
-                            id: payload.sub,
-                            nickname: payload.nickname,
-                            role: payload.role
-                        };
-                        updateNavigation(true);
-                    } catch (error) {
-                        localStorage.removeItem('token');
-                        updateNavigation(false);
-                    }
-                } else {
-                    updateNavigation(false);
+            document.getElementById('prev-btn').addEventListener('click', () => {
+                if (currentPage > 0) {
+                    loadPosts(currentPage - 1);
                 }
-            }
+            });
 
-            function updateNavigation(isLoggedIn) {
-                const navGuest = document.getElementById('nav-guest');
-                const navUser = document.getElementById('nav-user');
-                const adminLink = document.getElementById('admin-link');
-
-                if (isLoggedIn) {
-                    navGuest.classList.add('hidden');
-                    navUser.classList.remove('hidden');
-                    document.getElementById('user-nickname').textContent = currentUser.nickname;
-                    
-                    if (currentUser.role === 'ADMIN') {
-                        adminLink.classList.remove('hidden');
-                    }
-                } else {
-                    navGuest.classList.remove('hidden');
-                    navUser.classList.add('hidden');
+            document.getElementById('next-btn').addEventListener('click', () => {
+                if (currentPage < totalPages - 1) {
+                    loadPosts(currentPage + 1);
                 }
+            });
+
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
             }
-
-            async function loadPosts() {
-                try {
-                    const headers = {};
-                    if (currentUser) {
-                        headers['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-                    }
-
-                    const response = await fetch(`${API_BASE_URL}/posts?page=${currentPage}&size=10`, {
-                        headers: headers
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('게시글을 불러올 수 없습니다.');
-                    }
-
-                    const data = await response.json();
-                    displayPosts(data.content || data.posts || []);
-                    
-                    totalPages = data.totalPages || 1;
-                    currentPage = data.currentPage || data.number + 1 || 1;
-                    
-                    updatePagination();
-                    
-                    document.getElementById('loading').classList.add('hidden');
-                    
-                } catch (error) {
-                    document.getElementById('loading').classList.add('hidden');
-                    showError(error.message);
-                }
-            }
-
-            function displayPosts(posts) {
-                const postList = document.getElementById('post-list');
-                
-                if (posts.length === 0) {
-                    document.getElementById('empty-state').classList.remove('hidden');
-                    return;
-                }
-
-                postList.innerHTML = '';
-                
-                posts.forEach(post => {
-                    const postCard = createPostCard(post);
-                    postList.appendChild(postCard);
-                });
-            }
-
-            function createPostCard(post) {
-                const article = document.createElement('article');
-                article.className = 'post-card';
-                article.style.cssText = `
-                    background: white;
-                    padding: 24px;
-                    border-radius: 12px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    border: 1px solid #e9ecef;
-                    margin-bottom: 20px;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                `;
-                
-                article.addEventListener('mouseenter', () => {
-                    article.style.transform = 'translateY(-2px)';
-                    article.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
-                });
-                
-                article.addEventListener('mouseleave', () => {
-                    article.style.transform = 'translateY(0)';
-                    article.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                });
-
-                article.addEventListener('click', () => {
-                    window.location.href = `post-detail.html?id=${post.id}`;
-                });
-
-                const isLiked = post.isLiked || false;
-                const likeCount = post.likeCount || 0;
-                const commentCount = post.commentCount || 0;
-
-                article.innerHTML = `
-                    <div class="post-card-header" style="margin-bottom: 16px;">
-                        <h2 class="post-card-title" style="font-size: 20px; font-weight: 600; color: #212529; margin: 0 0 8px 0; line-height: 1.4;">
-                            ${escapeHtml(post.title)}
-                        </h2>
-                        <div class="post-card-meta" style="display: flex; justify-content: space-between; align-items: center; color: #6c757d; font-size: 14px;">
-                            <div>
-                                <span class="post-author">${escapeHtml(post.authorNickname)}</span>
-                                <span style="margin: 0 8px;">•</span>
-                                <span class="post-date">${formatDateTime(post.createdAt)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="post-card-content" style="color: #495057; line-height: 1.6; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                        ${escapeHtml(post.content)}
-                    </div>
-                    
-                    <div class="post-card-footer" style="display: flex; gap: 16px; align-items: center; padding-top: 16px; border-top: 1px solid #f1f3f5;">
-                        <div class="post-stats" style="display: flex; gap: 16px; align-items: center;">
-                            <span style="display: flex; align-items: center; gap: 4px; color: ${isLiked ? '#dc3545' : '#6c757d'}; font-size: 14px;">
-                                ${isLiked ? '❤️' : '🤍'} ${likeCount}
-                            </span>
-                            <span style="display: flex; align-items: center; gap: 4px; color: #6c757d; font-size: 14px;">
-                                💬 ${commentCount}
-                            </span>
-                        </div>
-                    </div>
-                `;
-
-                return article;
-            }
-
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-
-            function formatDateTime(dateString) {
-                const date = new Date(dateString);
-                const now = new Date();
-                const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-                
-                if (diffInHours < 1) {
-                    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-                    return diffInMinutes < 1 ? '방금 전' : `${diffInMinutes}분 전`;
-                } else if (diffInHours < 24) {
-                    return `${diffInHours}시간 전`;
-                } else {
-                    return date.toLocaleDateString('ko-KR');
-                }
-            }
-
-            function updatePagination() {
-                const pagination = document.getElementById('pagination');
-                const prevBtn = document.getElementById('prev-btn');
-                const nextBtn = document.getElementById('next-btn');
-                const pageNumbers = document.getElementById('page-numbers');
-
-                if (totalPages <= 1) {
-                    pagination.classList.add('hidden');
-                    return;
-                }
-
-                pagination.classList.remove('hidden');
-                
-                prevBtn.disabled = currentPage === 1;
-                nextBtn.disabled = currentPage === totalPages;
-
-                pageNumbers.innerHTML = '';
-                
-                const startPage = Math.max(1, currentPage - 2);
-                const endPage = Math.min(totalPages, currentPage + 2);
-
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageBtn = document.createElement('button');
-                    pageBtn.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline'}`;
-                    pageBtn.textContent = i;
-                    pageBtn.style.margin = '0 2px';
-                    
-                    pageBtn.addEventListener('click', () => {
-                        if (i !== currentPage) {
-                            currentPage = i;
-                            loadPosts();
-                        }
-                    });
-                    
-                    pageNumbers.appendChild(pageBtn);
-                }
-            }
-
-            function setupEventListeners() {
-                const logoutBtn = document.getElementById('logout-btn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', logout);
-                }
-
-                const retryBtn = document.getElementById('retry-btn');
-                if (retryBtn) {
-                    retryBtn.addEventListener('click', () => {
-                        location.reload();
-                    });
-                }
-
-                const prevBtn = document.getElementById('prev-btn');
-                if (prevBtn) {
-                    prevBtn.addEventListener('click', () => {
-                        if (currentPage > 1) {
-                            currentPage--;
-                            loadPosts();
-                        }
-                    });
-                }
-
-                const nextBtn = document.getElementById('next-btn');
-                if (nextBtn) {
-                    nextBtn.addEventListener('click', () => {
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                            loadPosts();
-                        }
-                    });
-                }
-            }
-
-            function showError(message) {
-                const errorBanner = document.getElementById('error-banner');
-                const errorMessage = document.getElementById('error-message');
-                
-                errorMessage.textContent = message;
-                errorBanner.classList.remove('hidden');
-            }
-
-            function logout() {
-                localStorage.removeItem('token');
-                window.location.href = 'index.html';
-            }
-        })();
+        });
     </script>
 </body>
 </html>

@@ -4,11 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입 - 커뮤니티</title>
-    <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/pages.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 20px;
+        }
+
+        .logo {
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-guest .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #007bff;
+            color: #007bff;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .nav-guest .btn:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .main-content {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+
+        .form-page {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-header p {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .error-banner {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .nickname-preview {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .text-muted {
+            color: #666;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-primary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            .header-container {
+                padding: 1rem 15px;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -47,7 +296,7 @@
                             placeholder="이메일을 입력하세요"
                             required
                         >
-                        <div class="error-message hidden" id="email-error"></div>
+                        <div class="error-message" id="email-error"></div>
                     </div>
 
                     <div class="form-group">
@@ -60,7 +309,7 @@
                             placeholder="비밀번호를 입력하세요"
                             required
                         >
-                        <div class="error-message hidden" id="password-error"></div>
+                        <div class="error-message" id="password-error"></div>
                         <small class="form-help">영문, 숫자, 특수문자 포함 8자 이상</small>
                     </div>
 
@@ -74,7 +323,7 @@
                             placeholder="비밀번호를 다시 입력하세요"
                             required
                         >
-                        <div class="error-message hidden" id="confirmPassword-error"></div>
+                        <div class="error-message" id="confirmPassword-error"></div>
                     </div>
 
                     <div class="form-group">
@@ -87,7 +336,7 @@
                             placeholder="회사명을 입력하세요"
                             required
                         >
-                        <div class="error-message hidden" id="company-error"></div>
+                        <div class="error-message" id="company-error"></div>
                         <small class="form-help">예: 카카오, 네이버, 삼성전자</small>
                     </div>
 
@@ -105,7 +354,7 @@
                                 <option value="재무팀">재무팀</option>
                                 <option value="운영팀">운영팀</option>
                             </select>
-                            <div class="error-message hidden" id="department-error"></div>
+                            <div class="error-message" id="department-error"></div>
                         </div>
 
                         <div class="form-group">
@@ -121,7 +370,7 @@
                                 <option value="임원">임원</option>
                                 <option value="기타">기타</option>
                             </select>
-                            <div class="error-message hidden" id="jobRole-error"></div>
+                            <div class="error-message" id="jobRole-error"></div>
                         </div>
                     </div>
 
@@ -131,6 +380,11 @@
                             <br>
                             <small>(숫자는 자동으로 생성됩니다)</small>
                         </p>
+                    </div>
+
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>계정 생성 중...</p>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
@@ -148,12 +402,255 @@
         </div>
     </main>
 
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/validation.js"></script>
-    <script src="js/utils/auth.js"></script>
-    <script src="js/api/apiClient.js"></script>
-    <script src="js/api/authAPI.js"></script>
-    <script src="js/pages/register.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        const ENDPOINTS = {
+            AUTH: {
+                REGISTER: '/auth/register'
+            }
+        };
+
+        class APIClient {
+            static async request(endpoint, options = {}) {
+                const url = API_BASE_URL + endpoint;
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                };
+
+                try {
+                    const response = await fetch(url, config);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return await response.json();
+                    }
+                    return await response.text();
+                } catch (error) {
+                    if (error.name === 'TypeError') {
+                        throw new Error('네트워크 연결을 확인해주세요.');
+                    }
+                    throw error;
+                }
+            }
+
+            static async post(endpoint, data = {}) {
+                return this.request(endpoint, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+        }
+
+        function showElement(element) {
+            if (element) {
+                element.classList.remove('hidden');
+            }
+        }
+
+        function hideElement(element) {
+            if (element) {
+                element.classList.add('hidden');
+            }
+        }
+
+        function clearErrors() {
+            const errorIds = ['email-error', 'password-error', 'confirmPassword-error', 'company-error', 'department-error', 'jobRole-error'];
+            errorIds.forEach(id => hideError(id));
+            hideElement(document.getElementById('error-banner'));
+        }
+
+        function updateNicknamePreview() {
+            const department = document.getElementById('department').value;
+            const jobRole = document.getElementById('jobRole').value;
+            const company = document.getElementById('company').value.trim();
+            
+            const nicknamePreview = document.getElementById('nickname-preview');
+            const nicknameDisplay = document.getElementById('nickname-display');
+            
+            if (department && jobRole && company) {
+                const nickname = `${company} ${department} ${jobRole}-###`;
+                nicknameDisplay.textContent = nickname;
+                showElement(nicknamePreview);
+            } else {
+                hideElement(nicknamePreview);
+            }
+        }
+
+        function validatePassword(password) {
+            const minLength = 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            
+            return password.length >= minLength && hasUpper && hasLower && hasNumber && hasSpecial;
+        }
+
+        function validateForm(formData) {
+            clearErrors();
+            let isValid = true;
+
+            if (!formData.email) {
+                showError('email-error', '이메일을 입력해주세요.');
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                showError('email-error', '올바른 이메일 형식을 입력해주세요.');
+                isValid = false;
+            }
+
+            if (!formData.password) {
+                showError('password-error', '비밀번호를 입력해주세요.');
+                isValid = false;
+            } else if (!validatePassword(formData.password)) {
+                showError('password-error', '영문 대소문자, 숫자, 특수문자를 포함하여 8자 이상 입력해주세요.');
+                isValid = false;
+            }
+
+            if (!formData.confirmPassword) {
+                showError('confirmPassword-error', '비밀번호 확인을 입력해주세요.');
+                isValid = false;
+            } else if (formData.password !== formData.confirmPassword) {
+                showError('confirmPassword-error', '비밀번호가 일치하지 않습니다.');
+                isValid = false;
+            }
+
+            if (!formData.company || !formData.company.trim()) {
+                showError('company-error', '회사명을 입력해주세요.');
+                isValid = false;
+            } else if (formData.company.trim().length < 2) {
+                showError('company-error', '회사명은 2자 이상 입력해주세요.');
+                isValid = false;
+            }
+
+            if (!formData.department) {
+                showError('department-error', '부서를 선택해주세요.');
+                isValid = false;
+            }
+
+            if (!formData.jobRole) {
+                showError('jobRole-error', '직급을 선택해주세요.');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        async function handleRegister(formData) {
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+            const errorBanner = document.getElementById('error-banner');
+            const errorMessage = document.getElementById('error-message');
+
+            try {
+                loading.style.display = 'block';
+                submitBtn.disabled = true;
+
+                const registerData = {
+                    email: formData.email,
+                    password: formData.password,
+                    company: formData.company.trim(),
+                    department: formData.department,
+                    jobRole: formData.jobRole
+                };
+
+                console.log('Sending register data:', registerData);
+                const response = await APIClient.post(ENDPOINTS.AUTH.REGISTER, registerData);
+                console.log('Register response:', response);
+                
+                if (response.message || response.success !== false) {
+                    alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+                    window.location.href = 'login.html';
+                } else {
+                    errorMessage.textContent = '회원가입에 실패했습니다.';
+                    showElement(errorBanner);
+                }
+
+            } catch (error) {
+                console.error('Register error:', error);
+                
+                if (error.message.includes('이미 존재') || error.message.includes('already exists')) {
+                    showError('email-error', '이미 사용중인 이메일입니다.');
+                } else {
+                    errorMessage.textContent = error.message || '회원가입 중 오류가 발생했습니다.';
+                    showElement(errorBanner);
+                }
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const registerForm = document.getElementById('register-form');
+            
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = {
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value,
+                    confirmPassword: document.getElementById('confirmPassword').value,
+                    company: document.getElementById('company').value,
+                    department: document.getElementById('department').value,
+                    jobRole: document.getElementById('jobRole').value
+                };
+
+                if (validateForm(formData)) {
+                    await handleRegister(formData);
+                }
+            });
+
+            ['email', 'password', 'confirmPassword', 'company', 'department', 'jobRole'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', () => {
+                        hideError(id + '-error');
+                        if (id === 'department' || id === 'jobRole' || id === 'company') {
+                            updateNicknamePreview();
+                        }
+                    });
+                    element.addEventListener('change', () => {
+                        hideError(id + '-error');
+                        if (id === 'department' || id === 'jobRole' || id === 'company') {
+                            updateNicknamePreview();
+                        }
+                    });
+                }
+            });
+
+            console.log('Register page initialized');
+        });
+    </script>
 </body>
 </html>

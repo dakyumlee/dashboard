@@ -3,138 +3,606 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>새 글 작성 - 커뮤니티</title>
-    <link rel="stylesheet" href="css/common.css">
+    <title>글쓰기 - 커뮤니티</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 20px;
+        }
+
+        .logo a {
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-primary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+
+        .btn-outline:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .main {
+            padding: 2rem 0;
+        }
+
+        .page-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 300px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .char-count {
+            font-size: 0.75rem;
+            color: #666;
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+
+        .char-count.warning {
+            color: #ffc107;
+        }
+
+        .char-count.error {
+            color: #dc3545;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-nickname {
+            font-weight: 500;
+        }
+
+        .auth-required {
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .auth-required h2 {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+
+        .auth-required p {
+            margin-bottom: 2rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .form-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="header">
-        <div class="header-container">
-            <a href="index.html" class="logo">
-                <h1>커뮤니티</h1>
-            </a>
-            <nav class="nav" id="navigation">
-                <div class="nav-guest hidden" id="nav-guest">
-                    <a href="login.html" class="btn btn-outline btn-sm">로그인</a>
-                    <a href="register.html" class="btn btn-primary btn-sm">회원가입</a>
+        <div class="container">
+            <h1 class="logo">
+                <a href="index.html">커뮤니티</a>
+            </h1>
+            <nav class="nav">
+                <div class="auth-buttons hidden" id="auth-buttons">
+                    <a href="login.html" class="btn btn-outline">로그인</a>
+                    <a href="register.html" class="btn btn-primary">회원가입</a>
                 </div>
-                <div class="nav-user" id="nav-user">
-                    <span class="user-nickname" id="user-nickname">테스트-001</span>
-                    <a href="create-post.html" class="btn btn-primary btn-sm">글쓰기</a>
+                <div class="user-menu hidden" id="user-menu">
+                    <span class="user-nickname" id="user-nickname"></span>
                     <button class="btn btn-outline btn-sm" id="logout-btn">로그아웃</button>
                 </div>
             </nav>
         </div>
     </header>
 
-    <main class="main-content">
+    <main class="main">
         <div class="container">
-            <div style="max-width: 800px; margin: 0 auto;">
+            <div class="auth-required hidden" id="auth-required">
+                <h2>로그인이 필요합니다</h2>
+                <p>글을 작성하려면 먼저 로그인해주세요.</p>
+                <a href="login.html?returnUrl=create-post.html" class="btn btn-primary">로그인하기</a>
+            </div>
+
+            <div class="create-post-content hidden" id="create-post-content">
                 <div class="page-header">
-                    <h1>새 글 작성</h1>
-                    <p class="text-muted">커뮤니티에 새로운 이야기를 공유해보세요</p>
+                    <h1 class="page-title">새 글 작성</h1>
+                    <p class="page-subtitle">커뮤니티에 새로운 글을 작성해보세요.</p>
                 </div>
 
-                <div class="error-banner hidden" id="error-banner">
-                    <p id="error-message"></p>
+                <div class="form-container">
+                    <form id="create-post-form">
+                        <div class="form-group">
+                            <label for="title" class="form-label">제목</label>
+                            <input 
+                                type="text" 
+                                id="title" 
+                                name="title" 
+                                class="form-input" 
+                                placeholder="글 제목을 입력하세요"
+                                maxlength="100"
+                                required
+                            >
+                            <div class="error-message" id="title-error"></div>
+                            <div class="char-count" id="title-count">0 / 100</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="content" class="form-label">내용</label>
+                            <textarea 
+                                id="content" 
+                                name="content" 
+                                class="form-textarea" 
+                                placeholder="글 내용을 입력하세요"
+                                maxlength="5000"
+                                required
+                            ></textarea>
+                            <div class="error-message" id="content-error"></div>
+                            <div class="char-count" id="content-count">0 / 5000</div>
+                        </div>
+
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>글을 작성하는 중...</p>
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="index.html" class="btn btn-secondary">취소</a>
+                            <button type="submit" class="btn btn-primary" id="submit-btn">
+                                글 작성
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                <form id="post-form" style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                    <div style="margin-bottom: 1.5rem;">
-                        <label for="title" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">제목</label>
-                        <input 
-                            type="text" 
-                            id="title" 
-                            name="title" 
-                            style="width: 100%; padding: 0.75rem; border: 1px solid #dee2e6; border-radius: 4px; font-size: 16px;"
-                            placeholder="제목을 입력하세요"
-                            required
-                        >
-                    </div>
-
-                    <div style="margin-bottom: 1.5rem;">
-                        <label for="content" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">내용</label>
-                        <textarea 
-                            id="content" 
-                            name="content" 
-                            rows="10"
-                            style="width: 100%; padding: 0.75rem; border: 1px solid #dee2e6; border-radius: 4px; font-size: 16px; resize: vertical; min-height: 200px;"
-                            placeholder="내용을 입력하세요"
-                            required
-                        ></textarea>
-                        <small class="text-muted">최소 10자 이상 입력해주세요</small>
-                    </div>
-
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                        <button type="button" class="btn btn-outline" onclick="history.back()">취소</button>
-                        <button type="submit" class="btn btn-primary">작성하기</button>
-                    </div>
-                </form>
             </div>
         </div>
     </main>
 
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/auth.js"></script>
-    <script src="js/api/apiClient.js"></script>
-    <script src="js/api/postAPI.js"></script>
-    <script src="js/components/header.js"></script>
     <script>
-        function validateFormField(field, minLength = 1) {
-            const value = field.value.trim();
-            return value.length >= minLength;
-        }
-
-        function initCreatePostPage() {
-            if (!Auth.requireAuth()) {
-                return;
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        const ENDPOINTS = {
+            POSTS: {
+                CREATE: '/posts'
             }
+        };
 
-            const form = document.getElementById('post-form');
-            const errorBanner = document.getElementById('error-banner');
-            const errorMessage = document.getElementById('error-message');
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                hideElement(errorBanner);
-
-                const titleField = document.getElementById('title');
-                const contentField = document.getElementById('content');
-
-                if (!validateFormField(titleField, 1)) {
-                    errorMessage.textContent = '제목을 입력해주세요.';
-                    showElement(errorBanner);
-                    titleField.focus();
-                    return;
-                }
-
-                if (!validateFormField(contentField, 10)) {
-                    errorMessage.textContent = '내용을 최소 10자 이상 입력해주세요.';
-                    showElement(errorBanner);
-                    contentField.focus();
-                    return;
-                }
-
-                const postData = {
-                    title: titleField.value.trim(),
-                    content: contentField.value.trim()
+        class APIClient {
+            static async request(endpoint, options = {}) {
+                const url = API_BASE_URL + endpoint;
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
                 };
 
-                try {
-                    const response = await PostAPI.createPost(postData);
-                    showToast('게시글이 작성되었습니다.', 'success');
-                    window.location.href = '/';
-
-                } catch (error) {
-                    console.error('Create post error:', error);
-                    errorMessage.textContent = error.message || '게시글 작성 중 오류가 발생했습니다.';
-                    showElement(errorBanner);
+                const token = localStorage.getItem('token');
+                if (token) {
+                    config.headers['Authorization'] = `Bearer ${token}`;
                 }
-            });
+
+                try {
+                    const response = await fetch(url, config);
+                    
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('userInfo');
+                            throw new Error('인증이 필요합니다.');
+                        }
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return await response.json();
+                    }
+                    return await response.text();
+                } catch (error) {
+                    if (error.name === 'TypeError') {
+                        throw new Error('네트워크 연결을 확인해주세요.');
+                    }
+                    throw error;
+                }
+            }
+
+            static async post(endpoint, data = {}) {
+                return this.request(endpoint, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', initCreatePostPage);
+        const Auth = {
+            isAuthenticated() {
+                return localStorage.getItem('token') !== null;
+            },
+            
+            getUserInfo() {
+                const userInfo = localStorage.getItem('userInfo');
+                return userInfo ? JSON.parse(userInfo) : null;
+            }
+        };
+
+        function showElement(element) {
+            if (element) {
+                element.classList.remove('hidden');
+            }
+        }
+
+        function hideElement(element) {
+            if (element) {
+                element.classList.add('hidden');
+            }
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+        }
+
+        function clearErrors() {
+            hideError('title-error');
+            hideError('content-error');
+        }
+
+        function updateCharCount(inputId, countId, maxLength) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(countId);
+            
+            if (input && counter) {
+                const currentLength = input.value.length;
+                counter.textContent = `${currentLength} / ${maxLength}`;
+                
+                counter.className = 'char-count';
+                if (currentLength > maxLength * 0.9) {
+                    counter.classList.add('warning');
+                }
+                if (currentLength >= maxLength) {
+                    counter.classList.add('error');
+                }
+            }
+        }
+
+        function validateForm(formData) {
+            clearErrors();
+            let isValid = true;
+
+            if (!formData.title || !formData.title.trim()) {
+                showError('title-error', '제목을 입력해주세요.');
+                isValid = false;
+            } else if (formData.title.trim().length < 2) {
+                showError('title-error', '제목은 2자 이상 입력해주세요.');
+                isValid = false;
+            } else if (formData.title.length > 100) {
+                showError('title-error', '제목은 100자 이하로 입력해주세요.');
+                isValid = false;
+            }
+
+            if (!formData.content || !formData.content.trim()) {
+                showError('content-error', '내용을 입력해주세요.');
+                isValid = false;
+            } else if (formData.content.trim().length < 10) {
+                showError('content-error', '내용은 10자 이상 입력해주세요.');
+                isValid = false;
+            } else if (formData.content.length > 5000) {
+                showError('content-error', '내용은 5000자 이하로 입력해주세요.');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        async function handleCreatePost(formData) {
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+
+            try {
+                loading.style.display = 'block';
+                submitBtn.disabled = true;
+
+                const postData = {
+                    title: formData.title.trim(),
+                    content: formData.content.trim()
+                };
+
+                const response = await APIClient.post(ENDPOINTS.POSTS.CREATE, postData);
+                
+                if (response.id || response.message) {
+                    alert('글이 성공적으로 작성되었습니다!');
+                    window.location.href = response.id ? `post-detail.html?id=${response.id}` : 'index.html';
+                } else {
+                    showError('content-error', '글 작성에 실패했습니다.');
+                }
+
+            } catch (error) {
+                console.error('Create post error:', error);
+                
+                if (error.message.includes('401') || error.message.includes('인증')) {
+                    alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                    window.location.href = 'login.html?returnUrl=create-post.html';
+                } else {
+                    showError('content-error', error.message || '글 작성 중 오류가 발생했습니다.');
+                }
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        function updateAuthUI() {
+            const authButtons = document.getElementById('auth-buttons');
+            const userMenu = document.getElementById('user-menu');
+            const userNickname = document.getElementById('user-nickname');
+            const authRequired = document.getElementById('auth-required');
+            const createPostContent = document.getElementById('create-post-content');
+
+            if (Auth.isAuthenticated()) {
+                const userInfo = Auth.getUserInfo();
+                
+                hideElement(authButtons);
+                showElement(userMenu);
+                hideElement(authRequired);
+                showElement(createPostContent);
+                
+                if (userNickname && userInfo) {
+                    userNickname.textContent = userInfo.nickname || userInfo.email;
+                }
+            } else {
+                showElement(authButtons);
+                hideElement(userMenu);
+                showElement(authRequired);
+                hideElement(createPostContent);
+            }
+        }
+
+        function setupEventListeners() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'index.html';
+                });
+            }
+
+            const titleInput = document.getElementById('title');
+            const contentTextarea = document.getElementById('content');
+            
+            if (titleInput) {
+                titleInput.addEventListener('input', () => {
+                    updateCharCount('title', 'title-count', 100);
+                    hideError('title-error');
+                });
+            }
+
+            if (contentTextarea) {
+                contentTextarea.addEventListener('input', () => {
+                    updateCharCount('content', 'content-count', 5000);
+                    hideError('content-error');
+                });
+            }
+
+            const createPostForm = document.getElementById('create-post-form');
+            if (createPostForm) {
+                createPostForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = {
+                        title: document.getElementById('title').value,
+                        content: document.getElementById('content').value
+                    };
+
+                    if (validateForm(formData)) {
+                        await handleCreatePost(formData);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing create post page...');
+            updateAuthUI();
+            setupEventListeners();
+            
+            updateCharCount('title', 'title-count', 100);
+            updateCharCount('content', 'content-count', 5000);
+        });
     </script>
-    <script src="js/app.js"></script>
 </body>
 </html>

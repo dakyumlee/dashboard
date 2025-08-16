@@ -57,4 +57,8 @@ const JOB_ROLES = [
     '매니저', '디렉터', '임원', '기타'
 ];
 
+const PAGINATION = {
+    DEFAULT_SIZE: 10
+};
+
 console.log('Constants loaded');
