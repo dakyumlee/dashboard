@@ -1,16 +1,20 @@
 const APIClient = {
     async get(endpoint, params = {}) {
-        const url = new URL(`${API_BASE_URL}${endpoint}`);
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        const url = new URL(`${API_BASE_URL}${endpoint}`, window.location.origin);
+        
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                url.searchParams.append(key, params[key]);
+            }
+        });
         
         console.log('API GET Request:', url.toString());
         
         try {
-            const response = await fetch(url, {
+            const response = await fetch(url.toString(), {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': this.getAuthHeader()
+                    'Content-Type': 'application/json'
                 }
             });
             
@@ -51,8 +55,7 @@ const APIClient = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': this.getAuthHeader()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(data)
             });
@@ -94,11 +97,12 @@ const APIClient = {
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': this.getAuthHeader()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(data)
             });
+            
+            console.log('API Response status:', response.status);
             
             if (!response.ok) {
                 let errorData = {};
@@ -115,6 +119,7 @@ const APIClient = {
             }
 
             const responseData = await response.json();
+            console.log('API Response data:', responseData);
             return responseData;
             
         } catch (error) {
@@ -134,10 +139,11 @@ const APIClient = {
             const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': this.getAuthHeader()
+                    'Content-Type': 'application/json'
                 }
             });
+            
+            console.log('API Response status:', response.status);
             
             if (!response.ok) {
                 let errorData = {};
@@ -154,6 +160,7 @@ const APIClient = {
             }
 
             const responseData = await response.json();
+            console.log('API Response data:', responseData);
             return responseData;
             
         } catch (error) {
@@ -163,11 +170,6 @@ const APIClient = {
             console.error('API Client error:', error);
             throw error;
         }
-    },
-
-    getAuthHeader() {
-        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-        return token ? `Bearer ${token}` : '';
     }
 };
 

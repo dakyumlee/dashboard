@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>게시글 상세 - 커뮤니티</title>
     <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <header class="header">
@@ -28,7 +32,7 @@
     </header>
 
     <main class="main-content">
-        <div class="container">
+        <div class="post-detail-container">
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>게시글을 불러오는 중...</p>
@@ -36,13 +40,13 @@
 
             <div class="error-banner hidden" id="error-banner">
                 <p id="error-message"></p>
-                <a href="index.html" class="btn btn-sm btn-primary">목록으로</a>
+                <button class="btn btn-sm btn-primary" id="retry-btn">다시 시도</button>
             </div>
 
             <div class="post-detail hidden" id="post-detail">
-                <div class="post-header">
-                    <h1 class="post-title" id="post-title"></h1>
-                    <div class="post-meta">
+                <div class="post-detail-header">
+                    <h1 class="post-detail-title" id="post-title"></h1>
+                    <div class="post-detail-meta">
                         <div class="post-author-info">
                             <span class="author-nickname" id="post-author"></span>
                             <span class="post-date" id="post-date"></span>
@@ -54,11 +58,11 @@
                     </div>
                 </div>
 
-                <div class="post-content" id="post-content"></div>
+                <div class="post-detail-content" id="post-content"></div>
 
                 <div class="post-actions">
                     <button class="like-btn" id="like-btn">
-                        <span id="like-icon">❤️</span>
+                        <span id="like-icon">🤍</span>
                         <span id="like-count">0</span>
                     </button>
                     <a href="index.html" class="btn btn-outline btn-sm">목록으로</a>
@@ -92,6 +96,12 @@
                 </div>
 
                 <div class="comments-list" id="comments-list"></div>
+
+                <div class="comment-pagination hidden" id="comment-pagination">
+                    <button class="btn btn-outline btn-sm" id="load-more-comments">
+                        더 보기
+                    </button>
+                </div>
             </div>
         </div>
     </main>
@@ -116,12 +126,21 @@
         const API_BASE_URL = 'http://localhost:8080/api';
         let currentUser = null;
         let currentPost = null;
+        let postId = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             initPostDetail();
         });
 
         function initPostDetail() {
+            const urlParams = new URLSearchParams(window.location.search);
+            postId = urlParams.get('id');
+            
+            if (!postId) {
+                showError('게시글을 찾을 수 없습니다.');
+                return;
+            }
+
             checkAuthStatus();
             loadPost();
             setupEventListeners();
@@ -130,13 +149,18 @@
         function checkAuthStatus() {
             const token = localStorage.getItem('token');
             if (token) {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                currentUser = {
-                    id: payload.sub,
-                    nickname: payload.nickname,
-                    role: payload.role
-                };
-                updateNavigation(true);
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    currentUser = {
+                        id: payload.sub,
+                        nickname: payload.nickname,
+                        role: payload.role
+                    };
+                    updateNavigation(true);
+                } catch (error) {
+                    localStorage.removeItem('token');
+                    updateNavigation(false);
+                }
             } else {
                 updateNavigation(false);
             }
@@ -162,19 +186,14 @@
         }
 
         async function loadPost() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const postId = urlParams.get('id');
-
-            if (!postId) {
-                showError('게시글을 찾을 수 없습니다.');
-                return;
-            }
-
             try {
+                const headers = {};
+                if (currentUser) {
+                    headers['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
+                }
+
                 const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    headers: headers
                 });
 
                 if (!response.ok) {
@@ -184,6 +203,8 @@
                 currentPost = await response.json();
                 displayPost(currentPost);
                 checkPostOwnership();
+                showCommentsSection();
+                loadComments();
                 
             } catch (error) {
                 showError(error.message);
@@ -196,9 +217,25 @@
 
             document.getElementById('post-title').textContent = post.title;
             document.getElementById('post-author').textContent = post.authorNickname;
-            document.getElementById('post-date').textContent = new Date(post.createdAt).toLocaleDateString('ko-KR');
+            document.getElementById('post-date').textContent = formatDateTime(post.createdAt);
             document.getElementById('post-content').textContent = post.content;
-            document.getElementById('like-count').textContent = post.likeCount || 0;
+            
+            updateLikeButton(post.isLiked, post.likeCount);
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        function updateLikeButton(isLiked, likeCount) {
+            const likeBtn = document.getElementById('like-btn');
+            const likeIcon = document.getElementById('like-icon');
+            const likeCountSpan = document.getElementById('like-count');
+            
+            likeBtn.className = isLiked ? 'like-btn liked' : 'like-btn';
+            likeIcon.textContent = isLiked ? '❤️' : '🤍';
+            likeCountSpan.textContent = likeCount || 0;
         }
 
         function checkPostOwnership() {
@@ -211,11 +248,207 @@
             }
         }
 
+        function showCommentsSection() {
+            document.getElementById('comments-section').classList.remove('hidden');
+            
+            if (currentUser) {
+                document.getElementById('comment-form').classList.remove('hidden');
+            }
+        }
+
+        async function loadComments() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments?page=1&size=10`);
+                
+                if (!response.ok) {
+                    throw new Error('댓글을 불러올 수 없습니다.');
+                }
+                
+                const data = await response.json();
+                displayComments(data.comments || []);
+                
+                document.getElementById('comment-count').textContent = data.totalElements || 0;
+                
+            } catch (error) {
+                console.error('댓글 로딩 실패:', error);
+                const commentsList = document.getElementById('comments-list');
+                commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">댓글을 불러올 수 없습니다.</div>';
+            }
+        }
+
+        function displayComments(comments) {
+            const commentsList = document.getElementById('comments-list');
+            commentsList.innerHTML = '';
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">첫 번째 댓글을 작성해보세요!</div>';
+                return;
+            }
+            
+            comments.forEach(comment => {
+                const commentDiv = createCommentElement(comment);
+                commentsList.appendChild(commentDiv);
+            });
+        }
+
+        function createCommentElement(comment) {
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.style.cssText = 'border-bottom: 1px solid #f1f3f5; padding: 16px 0;';
+            
+            const isOwner = currentUser && currentUser.id == comment.authorId;
+            
+            div.innerHTML = `
+                <div class="comment-meta" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="comment-author" style="font-weight: 600; color: #333; font-size: 14px;">${comment.authorNickname}</span>
+                    <span class="comment-date" style="color: #888; font-size: 12px;">${formatDateTime(comment.createdAt)}</span>
+                </div>
+                <div class="comment-content" style="color: #333; line-height: 1.6; font-size: 14px; margin-bottom: 8px;">${comment.content}</div>
+                ${isOwner ? `
+                    <div class="comment-actions">
+                        <button class="btn btn-sm btn-danger" onclick="deleteComment(${comment.id})" style="padding: 4px 8px; font-size: 12px;">삭제</button>
+                    </div>
+                ` : ''}
+            `;
+            
+            return div;
+        }
+
         function setupEventListeners() {
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('delete-btn').addEventListener('click', showDeleteModal);
-            document.getElementById('delete-cancel-btn').addEventListener('click', hideDeleteModal);
-            document.getElementById('delete-confirm-btn').addEventListener('click', deletePost);
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
+
+            const deleteBtn = document.getElementById('delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', showDeleteModal);
+            }
+
+            const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+            if (deleteCancelBtn) {
+                deleteCancelBtn.addEventListener('click', hideDeleteModal);
+            }
+
+            const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+            if (deleteConfirmBtn) {
+                deleteConfirmBtn.addEventListener('click', deletePost);
+            }
+
+            const likeBtn = document.getElementById('like-btn');
+            if (likeBtn) {
+                likeBtn.addEventListener('click', toggleLike);
+            }
+
+            const commentForm = document.getElementById('comment-create-form');
+            if (commentForm) {
+                commentForm.addEventListener('submit', handleCreateComment);
+            }
+
+            const retryBtn = document.getElementById('retry-btn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', () => {
+                    location.reload();
+                });
+            }
+        }
+
+        async function toggleLike() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('좋아요 처리에 실패했습니다.');
+                }
+
+                const result = await response.json();
+                updateLikeButton(result.isLiked, result.likeCount);
+
+            } catch (error) {
+                console.error('좋아요 에러:', error);
+                alert(error.message);
+            }
+        }
+
+        async function handleCreateComment(e) {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const content = document.getElementById('comment-content').value.trim();
+            if (!content) {
+                alert('댓글 내용을 입력해주세요.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('comment-submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '작성 중...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (!response.ok) {
+                    throw new Error('댓글 작성에 실패했습니다.');
+                }
+
+                document.getElementById('comment-content').value = '';
+                loadComments();
+
+            } catch (error) {
+                console.error('댓글 작성 에러:', error);
+                alert(error.message);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function deleteComment(commentId) {
+            if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('댓글 삭제에 실패했습니다.');
+                }
+
+                loadComments();
+
+            } catch (error) {
+                console.error('댓글 삭제 에러:', error);
+                alert(error.message);
+            }
         }
 
         function showDeleteModal() {

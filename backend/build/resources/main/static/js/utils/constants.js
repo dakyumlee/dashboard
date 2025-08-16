@@ -16,15 +16,10 @@ const ENDPOINTS = {
         LIKE: '/posts'
     },
     COMMENTS: {
-        LIST: '/comments',
-        CREATE: '/comments',
+        LIST: '/posts',
+        CREATE: '/posts',
         UPDATE: '/comments',
         DELETE: '/comments'
-    },
-    ADMIN: {
-        POSTS: '/admin/posts',
-        COMMENTS: '/admin/comments',
-        USERS: '/admin/users'
     }
 };
 
@@ -37,27 +32,19 @@ const MESSAGES = {
     NETWORK_ERROR: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
     UNAUTHORIZED: '로그인이 필요합니다.',
     SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-    LOGIN_SUCCESS: '로그인이 완료되었습니다!',
     REGISTER_SUCCESS: '회원가입이 완료되었습니다!',
+    LOGIN_SUCCESS: '로그인되었습니다!',
+    LOGOUT_SUCCESS: '로그아웃되었습니다!',
     POST_CREATE_SUCCESS: '게시글이 작성되었습니다!',
     POST_UPDATE_SUCCESS: '게시글이 수정되었습니다!',
     POST_DELETE_SUCCESS: '게시글이 삭제되었습니다!',
     COMMENT_CREATE_SUCCESS: '댓글이 작성되었습니다!',
-    COMMENT_UPDATE_SUCCESS: '댓글이 수정되었습니다!',
-    COMMENT_DELETE_SUCCESS: '댓글이 삭제되었습니다!',
-    LIKE_SUCCESS: '좋아요가 반영되었습니다!',
-    LOGOUT_SUCCESS: '로그아웃되었습니다!'
+    COMMENT_DELETE_SUCCESS: '댓글이 삭제되었습니다!'
 };
 
 const VALIDATION = {
     EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    MIN_PASSWORD_LENGTH: 8,
-    MIN_TITLE_LENGTH: 2,
-    MAX_TITLE_LENGTH: 255,
-    MIN_CONTENT_LENGTH: 10,
-    MAX_CONTENT_LENGTH: 5000,
-    MIN_COMMENT_LENGTH: 1,
-    MAX_COMMENT_LENGTH: 1000
+    MIN_PASSWORD_LENGTH: 8
 };
 
 const DEPARTMENTS = [
@@ -69,16 +56,5 @@ const JOB_ROLES = [
     '신입', '주니어', '시니어', '리드', 
     '매니저', '디렉터', '임원', '기타'
 ];
-
-const PAGINATION = {
-    DEFAULT_PAGE_SIZE: 10,
-    MAX_PAGE_SIZE: 50
-};
-
-const UI = {
-    LOADING_DELAY: 300,
-    NOTIFICATION_DURATION: 3000,
-    REDIRECT_DELAY: 1000
-};
 
 console.log('Constants loaded');
