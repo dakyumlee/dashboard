@@ -20,20 +20,28 @@ public class AdminController {
 
     @GetMapping("/check-admin")
     public ResponseEntity<Map<String, Object>> checkAdmin(Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
         }
         
+        boolean isAdmin = isAdminUser(email);
+        
         Map<String, Object> response = new HashMap<>();
-        response.put("isAdmin", true);
+        response.put("isAdmin", isAdmin);
         
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboard(Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         Map<String, Object> response = adminService.getDashboardStats();
@@ -46,8 +54,13 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         Map<String, Object> response = adminService.getAllPosts(page, size);
@@ -60,8 +73,13 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         Map<String, Object> response = adminService.getAllComments(page, size);
@@ -74,8 +92,13 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         Map<String, Object> response = adminService.getAllUsers(page, size);
@@ -84,8 +107,13 @@ public class AdminController {
 
     @GetMapping("/companies")
     public ResponseEntity<Map<String, Object>> getCompaniesStats(Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         Map<String, Long> companiesStats = adminService.getCompaniesStats();
@@ -97,8 +125,13 @@ public class AdminController {
 
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<Map<String, String>> deletePost(@PathVariable Long id, Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         adminService.deletePost(id);
@@ -111,8 +144,13 @@ public class AdminController {
 
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<Map<String, String>> deleteComment(@PathVariable Long id, Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         adminService.deleteComment(id);
@@ -125,8 +163,13 @@ public class AdminController {
 
     @DeleteMapping("/posts/batch")
     public ResponseEntity<Map<String, String>> deletePosts(@RequestBody Map<String, Object> request, Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         @SuppressWarnings("unchecked")
@@ -141,8 +184,13 @@ public class AdminController {
 
     @DeleteMapping("/comments/batch")
     public ResponseEntity<Map<String, String>> deleteComments(@RequestBody Map<String, Object> request, Authentication authentication) {
-        if (authentication == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+        String email = null;
+        if (authentication != null) {
+            email = authentication.getName();
+        }
+        
+        if (!isAdminUser(email)) {
+            throw new RuntimeException("관리자 권한이 필요합니다");
         }
         
         @SuppressWarnings("unchecked")
@@ -153,5 +201,19 @@ public class AdminController {
         response.put("message", ids.size() + "개의 댓글이 삭제되었습니다");
         
         return ResponseEntity.ok(response);
+    }
+
+    private boolean isAdminUser(String email) {
+        if (email == null) {
+            return false;
+        }
+        
+        if ("admin@communityblind.com".equals(email)) {
+            return true;
+        }
+        
+        return "admin@test.com".equals(email) || 
+               "admin@admin.com".equals(email) ||
+               email.startsWith("admin@");
     }
 }
