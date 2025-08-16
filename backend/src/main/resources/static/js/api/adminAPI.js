@@ -1,66 +1,53 @@
-const AuthAPI = {
-    async login(credentials) {
+const AdminAPI = {
+    async getPosts(page = 1, size = 10) {
         try {
-            const response = await APIClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
+            const params = new URLSearchParams({
+                page: page - 1,
+                size: size
+            });
             
-            if (response.token) {
-                Auth.setToken(response.token);
-                Auth.setUser({
-                    email: response.email,
-                    nickname: response.nickname,
-                    isAdmin: response.isAdmin
-                });
-            }
-            
+            const response = await APIClient.get(`/admin/posts?${params}`);
             return response;
         } catch (error) {
+            console.error('게시글 목록 조회 실패:', error);
             throw error;
         }
     },
 
-    async register(userData) {
+    async getComments(page = 1, size = 10) {
         try {
-            const response = await APIClient.post(ENDPOINTS.AUTH.REGISTER, userData);
+            const params = new URLSearchParams({
+                page: page - 1,
+                size: size
+            });
+            
+            const response = await APIClient.get(`/admin/comments?${params}`);
             return response;
         } catch (error) {
+            console.error('댓글 목록 조회 실패:', error);
             throw error;
         }
     },
 
-    async logout() {
+    async deletePost(postId) {
         try {
-        } catch (error) {
-            console.error('Logout API error:', error);
-        } finally {
-            Auth.logout();
-        }
-    },
-
-    async getCurrentUser() {
-        try {
-            const response = await APIClient.get(ENDPOINTS.AUTH.ME);
-            
-            if (response) {
-                Auth.setUser({
-                    email: response.email,
-                    nickname: response.nickname,
-                    isAdmin: response.isAdmin
-                });
-            }
-            
+            const response = await APIClient.delete(`/admin/posts/${postId}`);
             return response;
         } catch (error) {
-            Auth.logout();
+            console.error('게시글 삭제 실패:', error);
             throw error;
         }
     },
 
-    async checkTokenValidity() {
+    async deleteComment(commentId) {
         try {
-            await this.getCurrentUser();
-            return true;
+            const response = await APIClient.delete(`/admin/comments/${commentId}`);
+            return response;
         } catch (error) {
-            return false;
+            console.error('댓글 삭제 실패:', error);
+            throw error;
         }
     }
 };
+
+console.log('AdminAPI loaded');

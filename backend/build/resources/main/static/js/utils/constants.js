@@ -20,6 +20,10 @@ const ENDPOINTS = {
         CREATE: '/posts',
         UPDATE: '/comments',
         DELETE: '/comments'
+    },
+    ADMIN: {
+        POSTS: '/admin/posts',
+        COMMENTS: '/admin/comments'
     }
 };
 

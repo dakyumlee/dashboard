@@ -1,8 +1,8 @@
 function validateEmail(email) {
-    if (!email || !email.trim()) {
+    if (!email.trim()) {
         return '이메일을 입력해주세요';
     }
-    if (!VALIDATION.EMAIL_REGEX.test(email.trim())) {
+    if (!VALIDATION.EMAIL_REGEX.test(email)) {
         return '올바른 이메일 형식을 입력해주세요';
     }
     return null;
@@ -34,64 +34,11 @@ function validateLoginForm(formData) {
     const emailError = validateEmail(formData.email);
     if (emailError) errors.email = emailError;
     
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) errors.password = passwordError;
+    if (!formData.password) {
+        errors.password = '비밀번호를 입력해주세요';
+    }
     
     return errors;
-}
-
-function validateCompany(company) {
-    if (!company || !company.trim()) {
-        return '회사명을 입력해주세요';
-    }
-    if (company.trim().length < 2) {
-        return '회사명은 최소 2자 이상이어야 합니다';
-    }
-    return null;
-}
-
-function validateFormField(input) {
-    if (!input) return null;
-    
-    const name = input.name;
-    const value = input.value ? input.value.trim() : '';
-    let error = null;
-
-    switch (name) {
-        case 'email':
-            error = validateEmail(value);
-            break;
-        case 'password':
-            error = validatePassword(value);
-            break;
-        case 'confirmPassword':
-            const passwordInput = input.form.querySelector('[name="password"]');
-            const passwordValue = passwordInput ? passwordInput.value : '';
-            error = validateConfirmPassword(passwordValue, value);
-            break;
-        case 'company':
-            error = validateCompany(value);
-            break;
-        case 'department':
-            if (!value) error = '부서를 선택해주세요';
-            break;
-        case 'jobRole':
-            if (!value) error = '직급을 선택해주세요';
-            break;
-    }
-
-    if (error) {
-        addInputError(input, error);
-    } else {
-        input.classList.remove('error');
-        const errorElement = document.getElementById(`${input.name}-error`);
-        if (errorElement) {
-            errorElement.textContent = '';
-            errorElement.classList.add('hidden');
-        }
-    }
-
-    return error;
 }
 
 function validateRegisterForm(formData) {
@@ -106,13 +53,54 @@ function validateRegisterForm(formData) {
     const confirmPasswordError = validateConfirmPassword(formData.password, formData.confirmPassword);
     if (confirmPasswordError) errors.confirmPassword = confirmPasswordError;
     
-    const companyError = validateCompany(formData.company);
-    if (companyError) errors.company = companyError;
-    
     if (!formData.department) errors.department = '부서를 선택해주세요';
     if (!formData.jobPosition) errors.jobRole = '직급을 선택해주세요';
     
     return errors;
+}
+
+function validateFormField(input) {
+    clearFieldError(input);
+    
+    let error = null;
+    const value = input.value.trim();
+    const name = input.name;
+    
+    switch (name) {
+        case 'email':
+            error = validateEmail(value);
+            break;
+        case 'password':
+            error = validatePassword(value);
+            break;
+        case 'confirmPassword':
+            const passwordInput = document.querySelector('input[name="password"]');
+            const password = passwordInput ? passwordInput.value : '';
+            error = validateConfirmPassword(password, value);
+            break;
+        case 'department':
+            if (!value) error = '부서를 선택해주세요';
+            break;
+        case 'jobRole':
+            if (!value) error = '직급을 선택해주세요';
+            break;
+    }
+    
+    if (error) {
+        addInputError(input, error);
+        return false;
+    }
+    
+    return true;
+}
+
+function clearFieldError(input) {
+    input.classList.remove('error');
+    const errorElement = document.getElementById(`${input.name}-error`);
+    if (errorElement) {
+        errorElement.classList.add('hidden');
+        errorElement.textContent = '';
+    }
 }
 
 function showValidationErrors(errors, form) {

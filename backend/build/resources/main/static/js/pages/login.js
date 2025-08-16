@@ -2,48 +2,80 @@ function initLoginPage() {
     if (Auth.redirectIfAuthenticated()) {
         return;
     }
-    
+
     setupLoginForm();
 }
 
 function setupLoginForm() {
     const form = document.getElementById('login-form');
-    if (!form) return;
+    const submitBtn = document.getElementById('submit-btn');
     
+    if (!form) return;
+
     form.addEventListener('submit', handleLogin);
+    
+    const inputs = form.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('blur', () => validateFormField(input));
+        input.addEventListener('input', () => {
+            if (input.classList.contains('error')) {
+                validateFormField(input);
+            }
+        });
+    });
 }
 
 async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const form = e.target;
     const submitBtn = document.getElementById('submit-btn');
+    const errorBanner = document.getElementById('error-banner');
+    const errorMessage = document.getElementById('error-message');
     
-    if (!email || !password) {
-        alert('이메일과 비밀번호를 입력해주세요.');
+    const formData = {
+        email: form.email.value.trim(),
+        password: form.password.value
+    };
+
+    const errors = validateLoginForm(formData);
+    
+    if (hasValidationErrors(errors)) {
+        showValidationErrors(errors, form);
         return;
     }
-    
+
     try {
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '로그인 중...';
+        setLoading(submitBtn, true);
+        hideElement(errorBanner);
+        
+        const response = await AuthAPI.login(formData);
+        
+        if (response.success) {
+            showToast(MESSAGES.LOGIN_SUCCESS, 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        } else {
+            throw new Error(response.message || '로그인에 실패했습니다.');
         }
-        
-        await AuthAPI.login({ email, password });
-        
-        alert('로그인되었습니다!');
-        window.location.href = 'index.html';
         
     } catch (error) {
-        alert('로그인 실패: ' + error.message);
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = '로그인';
+        console.error('Login error:', error);
+        
+        if (errorMessage) {
+            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR;
         }
+        showElement(errorBanner);
+        
+    } finally {
+        setLoading(submitBtn, false);
     }
 }
 
-console.log('Login page loaded');
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLoginPage);
+} else {
+    initLoginPage();
+}

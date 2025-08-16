@@ -1,8 +1,3 @@
-const STORAGE_KEYS = {
-    TOKEN: 'auth_token',
-    USER: 'user_data'
-};
-
 const Auth = {
     getToken() {
         return localStorage.getItem(STORAGE_KEYS.TOKEN);
@@ -40,21 +35,21 @@ const Auth = {
     },
 
     requireAdmin() {
-        if (!this.requireAuth()) {
+        const user = this.getUser();
+        
+        if (!user) {
+            alert('로그인이 필요합니다.');
+            window.location.href = 'login.html';
             return false;
         }
-        if (!this.isAdmin()) {
+        
+        if (!user.isAdmin) {
             alert('관리자 권한이 필요합니다.');
             window.location.href = 'index.html';
             return false;
         }
+        
         return true;
-    },
-
-    logout() {
-        localStorage.removeItem(STORAGE_KEYS.TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER);
-        window.location.href = 'index.html';
     },
 
     redirectIfAuthenticated() {
@@ -65,9 +60,16 @@ const Auth = {
         return false;
     },
 
+    logout() {
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        window.location.href = 'index.html';
+    },
+
     updateHeaderUI() {
+        const user = this.getUser();
+        
         if (typeof updateHeaderForUser === 'function') {
-            const user = this.getUser();
             updateHeaderForUser(user);
         }
     }
