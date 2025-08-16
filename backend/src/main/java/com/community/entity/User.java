@@ -19,30 +19,30 @@ public class User {
     @SequenceGenerator(name = "user_seq", sequenceName = "user_seq", allocationSize = 1)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 1020)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1020)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1020)
     private String department;
 
-    @Column(name = "job_position", nullable = false)
+    @Column(name = "job_position", nullable = false, length = 1020)
     private String jobPosition;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 1020)
     private String nickname;
 
     @Column(nullable = false)
     private String role = "USER";
 
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -62,6 +62,18 @@ public class User {
         this.department = department;
         this.jobPosition = jobPosition;
         this.nickname = nickname;
+    }
+
+    public Boolean getIsAdmin() {
+        return "ADMIN".equals(this.role);
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Long getId() {
@@ -110,18 +122,6 @@ public class User {
 
     public void setNickname(String nickname) {
         this.nickname = nickname;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public Boolean getIsAdmin() {
-        return "ADMIN".equals(role);
     }
 
     public LocalDateTime getCreatedAt() {
