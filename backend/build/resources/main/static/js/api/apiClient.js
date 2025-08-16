@@ -7,14 +7,17 @@ const APIClient = {
             url += `?${searchParams.toString()}`;
         }
         
+        console.log('API GET Request:', url);
+        
         try {
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                credentials: 'include'
+                }
             });
+            
+            console.log('API Response status:', response.status);
             
             if (!response.ok) {
                 let errorData = {};
@@ -31,6 +34,7 @@ const APIClient = {
             }
 
             const responseData = await response.json();
+            console.log('API Response data:', responseData);
             return responseData;
             
         } catch (error) {
@@ -44,6 +48,7 @@ const APIClient = {
 
     async post(endpoint, data = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API POST Request:', url, data);
         
         try {
             const response = await fetch(url, {
@@ -51,9 +56,10 @@ const APIClient = {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data),
-                credentials: 'include'
+                body: JSON.stringify(data)
             });
+            
+            console.log('API Response status:', response.status);
             
             if (!response.ok) {
                 let errorData = {};
@@ -70,6 +76,7 @@ const APIClient = {
             }
 
             const responseData = await response.json();
+            console.log('API Response data:', responseData);
             return responseData;
             
         } catch (error) {
@@ -83,6 +90,7 @@ const APIClient = {
 
     async put(endpoint, data = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API PUT Request:', url, data);
         
         try {
             const response = await fetch(url, {
@@ -90,9 +98,10 @@ const APIClient = {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data),
-                credentials: 'include'
+                body: JSON.stringify(data)
             });
+            
+            console.log('API Response status:', response.status);
             
             if (!response.ok) {
                 let errorData = {};
@@ -109,6 +118,7 @@ const APIClient = {
             }
 
             const responseData = await response.json();
+            console.log('API Response data:', responseData);
             return responseData;
             
         } catch (error) {
@@ -122,15 +132,17 @@ const APIClient = {
 
     async delete(endpoint) {
         const url = `${API_BASE_URL}${endpoint}`;
+        console.log('API DELETE Request:', url);
         
         try {
             const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                credentials: 'include'
+                }
             });
+            
+            console.log('API Response status:', response.status);
             
             if (!response.ok) {
                 let errorData = {};
@@ -147,6 +159,7 @@ const APIClient = {
             }
 
             const responseData = await response.json();
+            console.log('API Response data:', responseData);
             return responseData;
             
         } catch (error) {

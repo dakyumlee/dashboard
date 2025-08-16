@@ -9,11 +9,10 @@ const ENDPOINTS = {
     },
     POSTS: {
         LIST: '/posts',
-        CREATE: '/posts',
         DETAIL: '/posts',
+        CREATE: '/posts',
         UPDATE: '/posts',
         DELETE: '/posts',
-        SEARCH: '/posts/search',
         LIKE: '/posts'
     },
     COMMENTS: {
@@ -33,12 +32,7 @@ const MESSAGES = {
     NETWORK_ERROR: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
     UNAUTHORIZED: '로그인이 필요합니다.',
     SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-    REGISTER_SUCCESS: '회원가입이 완료되었습니다!',
-    POST_CREATE_SUCCESS: '게시글이 작성되었습니다!',
-    POST_UPDATE_SUCCESS: '게시글이 수정되었습니다!',
-    POST_DELETE_SUCCESS: '게시글이 삭제되었습니다!',
-    COMMENT_CREATE_SUCCESS: '댓글이 작성되었습니다!',
-    COMMENT_DELETE_SUCCESS: '댓글이 삭제되었습니다!'
+    REGISTER_SUCCESS: '회원가입이 완료되었습니다!'
 };
 
 const PAGINATION = {

@@ -1,116 +1,74 @@
-function initLoginPage() {
-    Auth.redirectIfAuthenticated().then(redirected => {
-        if (!redirected) {
-            setupLoginForm();
-        }
-    });
-}
-
-function setupLoginForm() {
-    const form = document.getElementById('login-form');
-    if (!form) return;
-    
-    form.addEventListener('submit', handleLogin);
-    
-    const inputs = form.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('blur', () => validateLoginField(input));
-        input.addEventListener('input', () => {
-            if (input.classList.contains('error')) {
-                validateLoginField(input);
-            }
-        });
-    });
-}
-
-async function handleLogin(e) {
-    e.preventDefault();
-    
-    const form = e.target;
-    const submitBtn = document.getElementById('submit-btn');
-    const errorBanner = document.getElementById('error-banner');
-    const errorMessage = document.getElementById('error-message');
-    
-    const formData = {
-        email: form.email.value.trim(),
-        password: form.password.value
-    };
-    
-    const errors = validateLoginForm(formData);
-    
-    if (hasValidationErrors(errors)) {
-        showValidationErrors(errors, form);
-        return;
-    }
-    
+async function loginUser(loginData) {
     try {
-        setLoading(submitBtn, true);
-        hideElement(errorBanner);
+        const response = await AuthAPI.login(loginData);
         
-        const response = await AuthAPI.login(formData);
-        
-        Auth.setCurrentUser({
+        Auth.setToken(response.token);
+        Auth.setUser({
             email: response.email,
             nickname: response.nickname,
             isAdmin: response.isAdmin
         });
         
-        showNotification(MESSAGES.LOGIN_SUCCESS, 'success');
+        alert('로그인이 완료되었습니다!');
+        window.location.href = 'index.html';
         
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
-        
+        return response;
     } catch (error) {
         console.error('Login error:', error);
-        
-        if (errorMessage) {
-            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR;
-        }
-        showElement(errorBanner);
-        
-    } finally {
-        setLoading(submitBtn, false);
+        showError(error.message || '로그인 중 오류가 발생했습니다.');
+        throw error;
     }
 }
 
-function validateLoginForm(formData) {
-    const errors = {};
-    
-    const emailError = validateEmail(formData.email);
-    if (emailError) errors.email = emailError;
-    
-    if (!formData.password) {
-        errors.password = '비밀번호를 입력해주세요';
+function showError(message) {
+    const errorBanner = document.getElementById('error-banner');
+    const errorMessage = document.getElementById('error-message');
+    if (errorBanner && errorMessage) {
+        errorMessage.textContent = message;
+        errorBanner.classList.remove('hidden');
     }
-    
-    return errors;
 }
 
-function validateLoginField(input) {
-    const value = input.value.trim();
-    const fieldName = input.name;
-    let error = null;
-    
-    if (fieldName === 'email') {
-        error = validateEmail(value);
-    } else if (fieldName === 'password') {
-        if (!value) {
-            error = '비밀번호를 입력해주세요';
-        }
+function hideError() {
+    const errorBanner = document.getElementById('error-banner');
+    if (errorBanner) {
+        errorBanner.classList.add('hidden');
     }
-    
-    if (error) {
-        addInputError(input, error);
-    } else {
-        removeInputError(input);
-    }
-    
-    return !error;
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLoginPage);
-} else {
+function initLoginPage() {
+    if (Auth.redirectIfAuthenticated()) {
+        return;
+    }
+
+    const loginForm = document.getElementById('login-form');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
+            
+            const formData = new FormData(this);
+            const loginData = {
+                email: formData.get('email'),
+                password: formData.get('password')
+            };
+            
+            console.log('Form submitted with data:', loginData);
+            
+            if (!loginData.email || !loginData.password) {
+                showError('이메일과 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+            
+            await loginUser(loginData);
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Login page DOM loaded');
     initLoginPage();
-}
+});
+
+console.log('Login page script loaded');
