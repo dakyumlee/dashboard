@@ -38,7 +38,7 @@
                 <p class="text-muted">자유롭게 소통해보세요!</p>
             </div>
 
-            <div class="loading hidden" id="loading">
+            <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>게시글을 불러오는 중...</p>
             </div>
@@ -48,7 +48,7 @@
                 <button class="btn btn-sm btn-primary" id="retry-btn">다시 시도</button>
             </div>
 
-            <div class="empty-state" id="empty-state">
+            <div class="empty-state hidden" id="empty-state">
                 <h3>아직 게시글이 없습니다</h3>
                 <p>첫 번째 글을 작성해보세요!</p>
                 <a href="create-post.html" class="btn btn-primary">글쓰기</a>
@@ -64,16 +64,280 @@
         </div>
     </main>
 
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/auth.js"></script>
-    <script src="js/api/apiClient.js"></script>
-    <script src="js/api/authAPI.js"></script>
-    <script src="js/api/postAPI.js"></script>
-    <script src="js/components/header.js"></script>
-    <script src="js/components/postCard.js"></script>
-    <script src="js/components/pagination.js"></script>
-    <script src="js/pages/home.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        (function() {
+            const API_BASE_URL = 'http://localhost:8080/api';
+            let currentUser = null;
+            let currentPage = 1;
+            let totalPages = 1;
+
+            document.addEventListener('DOMContentLoaded', function() {
+                initHomePage();
+            });
+
+            function initHomePage() {
+                checkAuthStatus();
+                loadPosts();
+                setupEventListeners();
+            }
+
+            function checkAuthStatus() {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        currentUser = {
+                            id: payload.sub,
+                            nickname: payload.nickname,
+                            role: payload.role
+                        };
+                        updateNavigation(true);
+                    } catch (error) {
+                        localStorage.removeItem('token');
+                        updateNavigation(false);
+                    }
+                } else {
+                    updateNavigation(false);
+                }
+            }
+
+            function updateNavigation(isLoggedIn) {
+                const navGuest = document.getElementById('nav-guest');
+                const navUser = document.getElementById('nav-user');
+                const adminLink = document.getElementById('admin-link');
+
+                if (isLoggedIn) {
+                    navGuest.classList.add('hidden');
+                    navUser.classList.remove('hidden');
+                    document.getElementById('user-nickname').textContent = currentUser.nickname;
+                    
+                    if (currentUser.role === 'ADMIN') {
+                        adminLink.classList.remove('hidden');
+                    }
+                } else {
+                    navGuest.classList.remove('hidden');
+                    navUser.classList.add('hidden');
+                }
+            }
+
+            async function loadPosts() {
+                try {
+                    const headers = {};
+                    if (currentUser) {
+                        headers['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/posts?page=${currentPage}&size=10`, {
+                        headers: headers
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('게시글을 불러올 수 없습니다.');
+                    }
+
+                    const data = await response.json();
+                    displayPosts(data.content || data.posts || []);
+                    
+                    totalPages = data.totalPages || 1;
+                    currentPage = data.currentPage || data.number + 1 || 1;
+                    
+                    updatePagination();
+                    
+                    document.getElementById('loading').classList.add('hidden');
+                    
+                } catch (error) {
+                    document.getElementById('loading').classList.add('hidden');
+                    showError(error.message);
+                }
+            }
+
+            function displayPosts(posts) {
+                const postList = document.getElementById('post-list');
+                
+                if (posts.length === 0) {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                    return;
+                }
+
+                postList.innerHTML = '';
+                
+                posts.forEach(post => {
+                    const postCard = createPostCard(post);
+                    postList.appendChild(postCard);
+                });
+            }
+
+            function createPostCard(post) {
+                const article = document.createElement('article');
+                article.className = 'post-card';
+                article.style.cssText = `
+                    background: white;
+                    padding: 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    border: 1px solid #e9ecef;
+                    margin-bottom: 20px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                `;
+                
+                article.addEventListener('mouseenter', () => {
+                    article.style.transform = 'translateY(-2px)';
+                    article.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                });
+                
+                article.addEventListener('mouseleave', () => {
+                    article.style.transform = 'translateY(0)';
+                    article.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                });
+
+                article.addEventListener('click', () => {
+                    window.location.href = `post-detail.html?id=${post.id}`;
+                });
+
+                const isLiked = post.isLiked || false;
+                const likeCount = post.likeCount || 0;
+                const commentCount = post.commentCount || 0;
+
+                article.innerHTML = `
+                    <div class="post-card-header" style="margin-bottom: 16px;">
+                        <h2 class="post-card-title" style="font-size: 20px; font-weight: 600; color: #212529; margin: 0 0 8px 0; line-height: 1.4;">
+                            ${escapeHtml(post.title)}
+                        </h2>
+                        <div class="post-card-meta" style="display: flex; justify-content: space-between; align-items: center; color: #6c757d; font-size: 14px;">
+                            <div>
+                                <span class="post-author">${escapeHtml(post.authorNickname)}</span>
+                                <span style="margin: 0 8px;">•</span>
+                                <span class="post-date">${formatDateTime(post.createdAt)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="post-card-content" style="color: #495057; line-height: 1.6; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${escapeHtml(post.content)}
+                    </div>
+                    
+                    <div class="post-card-footer" style="display: flex; gap: 16px; align-items: center; padding-top: 16px; border-top: 1px solid #f1f3f5;">
+                        <div class="post-stats" style="display: flex; gap: 16px; align-items: center;">
+                            <span style="display: flex; align-items: center; gap: 4px; color: ${isLiked ? '#dc3545' : '#6c757d'}; font-size: 14px;">
+                                ${isLiked ? '❤️' : '🤍'} ${likeCount}
+                            </span>
+                            <span style="display: flex; align-items: center; gap: 4px; color: #6c757d; font-size: 14px;">
+                                💬 ${commentCount}
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                return article;
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function formatDateTime(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+                
+                if (diffInHours < 1) {
+                    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+                    return diffInMinutes < 1 ? '방금 전' : `${diffInMinutes}분 전`;
+                } else if (diffInHours < 24) {
+                    return `${diffInHours}시간 전`;
+                } else {
+                    return date.toLocaleDateString('ko-KR');
+                }
+            }
+
+            function updatePagination() {
+                const pagination = document.getElementById('pagination');
+                const prevBtn = document.getElementById('prev-btn');
+                const nextBtn = document.getElementById('next-btn');
+                const pageNumbers = document.getElementById('page-numbers');
+
+                if (totalPages <= 1) {
+                    pagination.classList.add('hidden');
+                    return;
+                }
+
+                pagination.classList.remove('hidden');
+                
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
+
+                pageNumbers.innerHTML = '';
+                
+                const startPage = Math.max(1, currentPage - 2);
+                const endPage = Math.min(totalPages, currentPage + 2);
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline'}`;
+                    pageBtn.textContent = i;
+                    pageBtn.style.margin = '0 2px';
+                    
+                    pageBtn.addEventListener('click', () => {
+                        if (i !== currentPage) {
+                            currentPage = i;
+                            loadPosts();
+                        }
+                    });
+                    
+                    pageNumbers.appendChild(pageBtn);
+                }
+            }
+
+            function setupEventListeners() {
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', logout);
+                }
+
+                const retryBtn = document.getElementById('retry-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', () => {
+                        location.reload();
+                    });
+                }
+
+                const prevBtn = document.getElementById('prev-btn');
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (currentPage > 1) {
+                            currentPage--;
+                            loadPosts();
+                        }
+                    });
+                }
+
+                const nextBtn = document.getElementById('next-btn');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                            loadPosts();
+                        }
+                    });
+                }
+            }
+
+            function showError(message) {
+                const errorBanner = document.getElementById('error-banner');
+                const errorMessage = document.getElementById('error-message');
+                
+                errorMessage.textContent = message;
+                errorBanner.classList.remove('hidden');
+            }
+
+            function logout() {
+                localStorage.removeItem('token');
+                window.location.href = 'index.html';
+            }
+        })();
+    </script>
 </body>
 </html>
