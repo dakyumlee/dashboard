@@ -1,91 +1,57 @@
+const API_BASE_URL = 'http://localhost:8080/api';
+
 const APIClient = {
-    async get(endpoint, params = {}) {
-        const url = new URL(`${API_BASE_URL}${endpoint}`);
-        Object.keys(params).forEach(key => {
-            if (params[key] !== null && params[key] !== undefined) {
-                url.searchParams.append(key, params[key]);
-            }
-        });
-        
-        console.log('API GET Request:', url.toString());
-        
+    async request(method, url, data = null) {
+        const config = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        };
+
+        const token = Auth.getToken();
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        if (data) {
+            config.body = JSON.stringify(data);
+        }
+
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            console.log('API Response status:', response.status);
+            const response = await fetch(`${API_BASE_URL}${url}`, config);
             
             if (!response.ok) {
-                let errorData = {};
-                try {
-                    errorData = await response.json();
-                } catch (e) {
-                    console.error('Error parsing error response:', e);
+                if (response.status === 401) {
+                    Auth.logout();
+                    throw new Error('로그인이 필요합니다');
                 }
                 
-                const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
-                error.status = response.status;
-                error.data = errorData;
-                throw error;
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP ${response.status}`);
             }
 
-            const responseData = await response.json();
-            console.log('API Response data:', responseData);
-            return responseData;
-            
+            return await response.json();
         } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
-            }
-            console.error('API Client error:', error);
+            console.error('API 요청 실패:', error);
             throw error;
         }
     },
 
-    async post(endpoint, data = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        console.log('API Request:', url, data);
-        
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            console.log('API Response status:', response.status);
-            
-            if (!response.ok) {
-                let errorData = {};
-                try {
-                    errorData = await response.json();
-                } catch (e) {
-                    console.error('Error parsing error response:', e);
-                }
-                
-                const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
-                error.status = response.status;
-                error.data = errorData;
-                throw error;
-            }
+    async get(url) {
+        return this.request('GET', url);
+    },
 
-            const responseData = await response.json();
-            console.log('API Response data:', responseData);
-            return responseData;
-            
-        } catch (error) {
-            if (error.name === 'TypeError' || error.message.includes('fetch')) {
-                error.message = MESSAGES.NETWORK_ERROR;
-            }
-            console.error('API Client error:', error);
-            throw error;
-        }
+    async post(url, data) {
+        return this.request('POST', url, data);
+    },
+
+    async put(url, data) {
+        return this.request('PUT', url, data);
+    },
+
+    async delete(url) {
+        return this.request('DELETE', url);
     }
 };
 

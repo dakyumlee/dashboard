@@ -144,6 +144,14 @@
             padding: 6px 12px;
             font-size: 14px;
         }
+        .btn.btn-secondary {
+            background: #6c757d;
+            color: white;
+            border-color: #6c757d;
+        }
+        .btn.btn-secondary:hover {
+            background: #545b62;
+        }
         .btn.active {
             background: #007bff;
             color: white;
@@ -178,6 +186,12 @@
         .nav {
             display: flex;
             gap: 10px;
+            align-items: center;
+        }
+        .user-nickname {
+            margin-right: 10px;
+            font-weight: 500;
+            color: #333;
         }
         .main-content {
             min-height: calc(100vh - 80px);
@@ -253,6 +267,50 @@
         let currentPage = 0;
         const pageSize = 10;
         let totalPages = 0;
+
+        const Auth = {
+            getToken() { 
+                return localStorage.getItem('auth_token') || localStorage.getItem('token'); 
+            },
+            getUser() { 
+                const userData = localStorage.getItem('user_data') || localStorage.getItem('user');
+                return userData ? JSON.parse(userData) : null;
+            },
+            setUser(user) { 
+                localStorage.setItem('user_data', JSON.stringify(user)); 
+                localStorage.setItem('user', JSON.stringify(user));
+            },
+            isAdmin() {
+                const user = this.getUser();
+                return user && (user.isAdmin === true || user.role === 'ADMIN');
+            },
+            logout() {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_data');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        };
+
+        function updateHeaderForUser(user) {
+            const navGuest = document.getElementById('nav-guest');
+            const navUser = document.getElementById('nav-user');
+            const userNickname = document.getElementById('user-nickname');
+            const adminLink = document.getElementById('admin-link');
+
+            if (user) {
+                if (navGuest) navGuest.classList.add('hidden');
+                if (navUser) navUser.classList.remove('hidden');
+                if (userNickname) userNickname.textContent = user.nickname;
+                if (adminLink && Auth.isAdmin()) {
+                    adminLink.classList.remove('hidden');
+                }
+            } else {
+                if (navGuest) navGuest.classList.remove('hidden');
+                if (navUser) navUser.classList.add('hidden');
+            }
+        }
 
         function showLoading() {
             document.getElementById('loading').classList.remove('hidden');
@@ -406,34 +464,8 @@
         }
 
         function checkAuthAndUpdateNav() {
-            const token = localStorage.getItem('token');
-            const user = localStorage.getItem('user');
-            
-            if (token && user) {
-                try {
-                    const userData = JSON.parse(user);
-                    document.getElementById('nav-guest').classList.add('hidden');
-                    document.getElementById('nav-user').classList.remove('hidden');
-                    document.getElementById('user-nickname').textContent = userData.nickname;
-                    
-                    if (userData.role === 'ADMIN') {
-                        document.getElementById('admin-link').classList.remove('hidden');
-                    }
-                } catch (error) {
-                    console.error('사용자 정보 파싱 실패:', error);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                }
-            } else {
-                document.getElementById('nav-guest').classList.remove('hidden');
-                document.getElementById('nav-user').classList.add('hidden');
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.reload();
+            const user = Auth.getUser();
+            updateHeaderForUser(user);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -458,9 +490,17 @@
 
             const logoutBtn = document.getElementById('logout-btn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', logout);
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('로그아웃 하시겠습니까?')) {
+                        Auth.logout();
+                    }
+                });
             }
         });
+
+        window.Auth = Auth;
+        window.updateHeaderForUser = updateHeaderForUser;
     </script>
 </body>
 </html>

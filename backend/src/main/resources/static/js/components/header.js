@@ -1,5 +1,5 @@
-async function initHeader() {
-    await Auth.updateHeaderUI();
+function initHeader() {
+    Auth.updateHeaderUI();
     
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -7,11 +7,11 @@ async function initHeader() {
     }
 }
 
-async function handleLogout(e) {
+function handleLogout(e) {
     e.preventDefault();
     
     if (confirm('로그아웃 하시겠습니까?')) {
-        await Auth.logout();
+        Auth.logout();
     }
 }
 
@@ -22,18 +22,24 @@ function updateHeaderForUser(user) {
     const adminLink = document.getElementById('admin-link');
 
     if (user) {
-        hideElement(navGuest);
-        showElement(navUser);
+        if (navGuest) navGuest.classList.add('hidden');
+        if (navUser) navUser.classList.remove('hidden');
         
         if (userNickname) {
             userNickname.textContent = user.nickname;
         }
         
         if (adminLink) {
-            toggleElement(adminLink, user.isAdmin);
+            if (user.isAdmin) {
+                adminLink.classList.remove('hidden');
+            } else {
+                adminLink.classList.add('hidden');
+            }
         }
     } else {
-        showElement(navGuest);
-        hideElement(navUser);
+        if (navGuest) navGuest.classList.remove('hidden');
+        if (navUser) navUser.classList.add('hidden');
     }
 }
+
+console.log('Header loaded');

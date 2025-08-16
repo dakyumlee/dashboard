@@ -1,3 +1,8 @@
+const STORAGE_KEYS = {
+    TOKEN: 'auth_token',
+    USER: 'user_data'
+};
+
 const Auth = {
     getToken() {
         return localStorage.getItem(STORAGE_KEYS.TOKEN);
@@ -16,14 +21,40 @@ const Auth = {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     },
 
+    isAuthenticated() {
+        return !!this.getToken();
+    },
+
+    isAdmin() {
+        const user = this.getUser();
+        return user && user.isAdmin === true;
+    },
+
+    requireAuth() {
+        if (!this.isAuthenticated()) {
+            alert('로그인이 필요합니다.');
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    },
+
+    requireAdmin() {
+        if (!this.requireAuth()) {
+            return false;
+        }
+        if (!this.isAdmin()) {
+            alert('관리자 권한이 필요합니다.');
+            window.location.href = 'index.html';
+            return false;
+        }
+        return true;
+    },
+
     logout() {
         localStorage.removeItem(STORAGE_KEYS.TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER);
-        this.updateHeaderUI();
-    },
-
-    isAuthenticated() {
-        return !!this.getToken();
+        window.location.href = 'index.html';
     },
 
     redirectIfAuthenticated() {
@@ -34,30 +65,12 @@ const Auth = {
         return false;
     },
 
-    redirectIfNotAuthenticated() {
-        if (!this.isAuthenticated()) {
-            window.location.href = 'login.html';
-            return true;
-        }
-        return false;
-    },
-
     updateHeaderUI() {
-        const user = this.getUser();
         if (typeof updateHeaderForUser === 'function') {
+            const user = this.getUser();
             updateHeaderForUser(user);
         }
     }
 };
-
-function toggleElement(element, show) {
-    if (element) {
-        if (show) {
-            element.classList.remove('hidden');
-        } else {
-            element.classList.add('hidden');
-        }
-    }
-}
 
 console.log('Auth loaded');

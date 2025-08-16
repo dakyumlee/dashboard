@@ -1,8 +1,7 @@
 const AuthAPI = {
     async login(credentials) {
         try {
-            console.log('로그인 시도:', credentials.email);
-            const response = await APIClient.post(ENDPOINTS.AUTH.LOGIN, credentials);
+            const response = await APIClient.post('/auth/login', credentials);
             
             if (response.token) {
                 Auth.setToken(response.token);
@@ -11,43 +10,35 @@ const AuthAPI = {
                     nickname: response.nickname,
                     isAdmin: response.isAdmin
                 });
-                console.log('로그인 성공, 메인 페이지로 이동');
-                window.location.href = 'index.html';
             }
             
             return response;
         } catch (error) {
-            console.error('로그인 오류:', error);
             throw error;
         }
     },
 
     async register(userData) {
         try {
-            console.log('회원가입 시도:', userData.email);
-            const response = await APIClient.post(ENDPOINTS.AUTH.REGISTER, userData);
-            console.log('회원가입 응답:', response);
+            const response = await APIClient.post('/auth/register', userData);
             return response;
         } catch (error) {
-            console.error('회원가입 오류:', error);
             throw error;
         }
     },
 
     async logout() {
         try {
-            console.log('로그아웃 처리');
-        } catch (error) {
-            console.error('로그아웃 오류:', error);
-        } finally {
             Auth.logout();
-            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Logout API error:', error);
+            Auth.logout();
         }
     },
 
     async getCurrentUser() {
         try {
-            const response = await APIClient.get(ENDPOINTS.AUTH.ME);
+            const response = await APIClient.get('/auth/me');
             
             if (response) {
                 Auth.setUser({
