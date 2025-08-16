@@ -1,36 +1,27 @@
 const APIClient = {
-    async request(method, endpoint, data = null, params = null) {
-        const url = new URL(`${API_BASE_URL}${endpoint}`);
+    async get(endpoint, params = {}) {
+        let url = `${API_BASE_URL}${endpoint}`;
         
-        if (params) {
-            Object.keys(params).forEach(key => {
-                if (params[key] !== null && params[key] !== undefined) {
-                    url.searchParams.append(key, params[key]);
-                }
-            });
-        }
-        
-        const config = {
-            method: method,
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-        
-        if (data) {
-            config.body = JSON.stringify(data);
+        if (Object.keys(params).length > 0) {
+            const searchParams = new URLSearchParams(params);
+            url += `?${searchParams.toString()}`;
         }
         
         try {
-            const response = await fetch(url.toString(), config);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
             
             if (!response.ok) {
                 let errorData = {};
                 try {
                     errorData = await response.json();
                 } catch (e) {
-                    errorData = { message: '서버 오류가 발생했습니다.' };
+                    console.error('Error parsing error response:', e);
                 }
                 
                 const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
@@ -38,35 +29,134 @@ const APIClient = {
                 error.data = errorData;
                 throw error;
             }
-            
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return await response.json();
-            }
-            
-            return { success: true };
+
+            const responseData = await response.json();
+            return responseData;
             
         } catch (error) {
             if (error.name === 'TypeError' || error.message.includes('fetch')) {
                 error.message = MESSAGES.NETWORK_ERROR;
             }
+            console.error('API Client error:', error);
             throw error;
         }
     },
 
-    async get(endpoint, params = null) {
-        return this.request('GET', endpoint, null, params);
-    },
-
     async post(endpoint, data = {}) {
-        return this.request('POST', endpoint, data);
+        const url = `${API_BASE_URL}${endpoint}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data),
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                let errorData = {};
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
+                }
+                
+                const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
+                error.status = response.status;
+                error.data = errorData;
+                throw error;
+            }
+
+            const responseData = await response.json();
+            return responseData;
+            
+        } catch (error) {
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
+            }
+            console.error('API Client error:', error);
+            throw error;
+        }
     },
 
     async put(endpoint, data = {}) {
-        return this.request('PUT', endpoint, data);
+        const url = `${API_BASE_URL}${endpoint}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data),
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                let errorData = {};
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
+                }
+                
+                const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
+                error.status = response.status;
+                error.data = errorData;
+                throw error;
+            }
+
+            const responseData = await response.json();
+            return responseData;
+            
+        } catch (error) {
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
+            }
+            console.error('API Client error:', error);
+            throw error;
+        }
     },
 
     async delete(endpoint) {
-        return this.request('DELETE', endpoint);
+        const url = `${API_BASE_URL}${endpoint}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                let errorData = {};
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
+                }
+                
+                const error = new Error(errorData.message || MESSAGES.SERVER_ERROR);
+                error.status = response.status;
+                error.data = errorData;
+                throw error;
+            }
+
+            const responseData = await response.json();
+            return responseData;
+            
+        } catch (error) {
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                error.message = MESSAGES.NETWORK_ERROR;
+            }
+            console.error('API Client error:', error);
+            throw error;
+        }
     }
 };
+
+console.log('APIClient loaded');
