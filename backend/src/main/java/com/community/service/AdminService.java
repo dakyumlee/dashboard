@@ -36,14 +36,18 @@ public class AdminService {
         Page<Post> postsPage = postRepository.findAllOrderByCreatedAtDesc(pageable);
 
         List<PostListResponse> posts = postsPage.getContent().stream()
-                .map(post -> new PostListResponse(
-                        post.getId(),
-                        post.getTitle(),
-                        post.getAuthor().getNickname(),
-                        post.getCreatedAt(),
-                        post.getLikeCount(),
-                        false
-                ))
+                .map(post -> {
+                    int commentCount = (int) commentRepository.countByPostId(post.getId());
+                    return new PostListResponse(
+                            post.getId(),
+                            post.getTitle(),
+                            post.getAuthor().getNickname(),
+                            post.getCreatedAt(),
+                            post.getLikeCount(),
+                            commentCount,
+                            false
+                    );
+                })
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -87,14 +91,12 @@ public class AdminService {
     public void deletePost(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new CustomException("게시글을 찾을 수 없습니다"));
-        
         postRepository.delete(post);
     }
 
     public void deleteComment(Long id) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new CustomException("댓글을 찾을 수 없습니다"));
-        
         commentRepository.delete(comment);
     }
 }

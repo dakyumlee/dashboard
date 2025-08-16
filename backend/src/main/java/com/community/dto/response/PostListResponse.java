@@ -9,16 +9,19 @@ public class PostListResponse {
     private String authorNickname;
     private LocalDateTime createdAt;
     private int likeCount;
+    private int commentCount;
     private boolean isLiked;
 
     public PostListResponse() {}
 
-    public PostListResponse(Long id, String title, String authorNickname, LocalDateTime createdAt, int likeCount, boolean isLiked) {
+    public PostListResponse(Long id, String title, String authorNickname, LocalDateTime createdAt, 
+                           int likeCount, int commentCount, boolean isLiked) {
         this.id = id;
         this.title = title;
         this.authorNickname = authorNickname;
         this.createdAt = createdAt;
         this.likeCount = likeCount;
+        this.commentCount = commentCount;
         this.isLiked = isLiked;
     }
 
@@ -60,6 +63,14 @@ public class PostListResponse {
 
     public void setLikeCount(int likeCount) {
         this.likeCount = likeCount;
+    }
+
+    public int getCommentCount() {
+        return commentCount;
+    }
+
+    public void setCommentCount(int commentCount) {
+        this.commentCount = commentCount;
     }
 
     public boolean isLiked() {

@@ -3,6 +3,7 @@ package com.community.controller;
 import com.community.dto.response.PostListResponse;
 import com.community.entity.Post;
 import com.community.entity.User;
+import com.community.repository.CommentRepository;
 import com.community.repository.LikeRepository;
 import com.community.repository.PostRepository;
 import com.community.repository.UserRepository;
@@ -32,6 +33,9 @@ public class AdminController {
 
     @Autowired
     private LikeRepository likeRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
 
     @GetMapping("/posts")
     public ResponseEntity<?> getAllPostsForAdmin(@RequestParam(defaultValue = "0") int page, 
@@ -107,12 +111,15 @@ public class AdminController {
             }
         }
 
+        int commentCount = (int) commentRepository.countByPostId(post.getId());
+
         return new PostListResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getAuthor().getNickname(),
                 post.getCreatedAt(),
                 post.getLikeCount(),
+                commentCount,
                 isLiked
         );
     }

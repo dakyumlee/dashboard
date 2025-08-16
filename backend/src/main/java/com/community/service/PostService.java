@@ -6,6 +6,7 @@ import com.community.dto.response.PostListResponse;
 import com.community.entity.Post;
 import com.community.entity.User;
 import com.community.exception.CustomException;
+import com.community.repository.CommentRepository;
 import com.community.repository.LikeRepository;
 import com.community.repository.PostRepository;
 import com.community.repository.UserRepository;
@@ -27,11 +28,14 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
+    private final CommentRepository commentRepository;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, LikeRepository likeRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, 
+                      LikeRepository likeRepository, CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.likeRepository = likeRepository;
+        this.commentRepository = commentRepository;
     }
 
     public PostDetailResponse createPost(PostRequest request, String email) {
@@ -55,14 +59,14 @@ public class PostService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("posts", posts);
-        response.put("content", posts);
-        response.put("currentPage", postsPage.getNumber() + 1);
+        response.put("currentPage", postsPage.getNumber());
         response.put("totalPages", postsPage.getTotalPages());
         response.put("totalElements", postsPage.getTotalElements());
         response.put("hasNext", postsPage.hasNext());
         response.put("hasPrevious", postsPage.hasPrevious());
         response.put("first", postsPage.isFirst());
         response.put("last", postsPage.isLast());
+        response.put("content", posts);
 
         return response;
     }
@@ -115,15 +119,12 @@ public class PostService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("posts", posts);
-        response.put("content", posts);
         response.put("keyword", keyword);
-        response.put("currentPage", postsPage.getNumber() + 1);
+        response.put("currentPage", postsPage.getNumber());
         response.put("totalPages", postsPage.getTotalPages());
         response.put("totalElements", postsPage.getTotalElements());
         response.put("hasNext", postsPage.hasNext());
         response.put("hasPrevious", postsPage.hasPrevious());
-        response.put("first", postsPage.isFirst());
-        response.put("last", postsPage.isLast());
 
         return response;
     }
@@ -137,12 +138,15 @@ public class PostService {
             }
         }
 
+        int commentCount = (int) commentRepository.countByPostId(post.getId());
+
         return new PostListResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getAuthor().getNickname(),
                 post.getCreatedAt(),
                 post.getLikeCount(),
+                commentCount,
                 isLiked
         );
     }

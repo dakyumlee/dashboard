@@ -41,14 +41,14 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        String email = authentication != null ? authentication.getName() : null;
+        String email = null;
         Map<String, Object> response = postService.getAllPosts(page, size, email);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long id, Authentication authentication) {
-        String email = authentication != null ? authentication.getName() : null;
+        String email = null;
         PostDetailResponse response = postService.getPostById(id, email);
         return ResponseEntity.ok(response);
     }
@@ -83,7 +83,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
         
-        String email = authentication != null ? authentication.getName() : null;
+        String email = null;
         Map<String, Object> response = postService.searchPosts(keyword, page, size, email);
         return ResponseEntity.ok(response);
     }
