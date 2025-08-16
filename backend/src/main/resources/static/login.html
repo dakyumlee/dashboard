@@ -45,6 +45,7 @@
                             name="email" 
                             class="form-control" 
                             placeholder="이메일을 입력하세요"
+                            value="admin@communityblind.com"
                             required
                         >
                         <div class="error-message hidden" id="email-error"></div>
@@ -58,12 +59,13 @@
                             name="password" 
                             class="form-control" 
                             placeholder="비밀번호를 입력하세요"
+                            value="password123"
                             required
                         >
                         <div class="error-message hidden" id="password-error"></div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-full" id="submit-btn" data-original-text="로그인">
+                    <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
                         로그인
                     </button>
                 </form>
@@ -80,18 +82,10 @@
 
     <script src="js/utils/constants.js"></script>
     <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/validation.js"></script> 
+    <script src="js/utils/validation.js"></script>
     <script src="js/utils/auth.js"></script>
     <script src="js/api/apiClient.js"></script>
     <script src="js/api/authAPI.js"></script>
     <script src="js/pages/login.js"></script>
-    <script>
-        console.log('Login page loaded');
-        if (typeof initLoginPage === 'function') {
-            initLoginPage();
-        } else {
-            console.error('initLoginPage function not found');
-        }
-    </script>
 </body>
 </html>

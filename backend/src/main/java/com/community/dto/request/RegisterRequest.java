@@ -14,6 +14,10 @@ public class RegisterRequest {
     @Size(min = 6, message = "비밀번호는 최소 6자 이상이어야 합니다")
     private String password;
 
+    @NotBlank(message = "회사명은 필수입니다")
+    @Size(min = 2, max = 100, message = "회사명은 2자 이상 100자 이하로 입력해주세요")
+    private String company;
+
     @NotBlank(message = "부서는 필수입니다")
     private String department;
 
@@ -22,9 +26,10 @@ public class RegisterRequest {
 
     public RegisterRequest() {}
 
-    public RegisterRequest(String email, String password, String department, String jobPosition) {
+    public RegisterRequest(String email, String password, String company, String department, String jobPosition) {
         this.email = email;
         this.password = password;
+        this.company = company;
         this.department = department;
         this.jobPosition = jobPosition;
     }
@@ -43,6 +48,14 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
     }
 
     public String getDepartment() {

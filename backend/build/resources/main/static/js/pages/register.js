@@ -1,74 +1,98 @@
 function initRegisterPage() {
+    console.log('initRegisterPage called');
+    
     if (Auth.redirectIfAuthenticated()) {
         return;
     }
+    
+    setupRegisterForm();
+}
 
+function setupRegisterForm() {
     const form = document.getElementById('register-form');
-    const errorBanner = document.getElementById('error-banner');
-    const errorMessage = document.getElementById('error-message');
-
     if (!form) {
         console.error('Register form not found');
         return;
     }
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        hideElement(errorBanner);
-
-        const formData = new FormData(form);
-        const userData = {
-            email: formData.get('email'),
-            password: formData.get('password'),
-            confirmPassword: formData.get('confirmPassword'),
-            department: formData.get('department'),
-            jobPosition: formData.get('jobPosition')
-        };
-
-        if (userData.password !== userData.confirmPassword) {
-            errorMessage.textContent = '비밀번호가 일치하지 않습니다.';
-            showElement(errorBanner);
-            return;
-        }
-
-        if (userData.password.length < 8) {
-            errorMessage.textContent = '비밀번호는 8자 이상이어야 합니다.';
-            showElement(errorBanner);
-            return;
-        }
-
-        if (!userData.department || !userData.jobPosition) {
-            errorMessage.textContent = '부서와 직급을 선택해주세요.';
-            showElement(errorBanner);
-            return;
-        }
-
-        try {
-            const response = await AuthAPI.register({
-                email: userData.email,
-                password: userData.password,
-                department: userData.department,
-                jobPosition: userData.jobPosition
-            });
-
-            showToast(MESSAGES.REGISTER_SUCCESS, 'success');
-            window.location.href = '/login.html';
-
-        } catch (error) {
-            console.error('Register error:', error);
-            errorMessage.textContent = error.message || '회원가입 중 오류가 발생했습니다.';
-            showElement(errorBanner);
-        }
+    
+    console.log('Setting up register form');
+    form.addEventListener('submit', handleRegister);
+    
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', () => validateFormField(input));
+        input.addEventListener('input', () => {
+            if (input.classList.contains('error')) {
+                validateFormField(input);
+            }
+        });
     });
 }
 
-function validateFormField(field, minLength = 1) {
-    const value = field.value.trim();
-    return value.length >= minLength;
+async function handleRegister(e) {
+    e.preventDefault();
+    console.log('handleRegister called');
+    
+    const form = e.target;
+    const submitBtn = document.getElementById('submit-btn');
+    const errorBanner = document.getElementById('error-banner');
+    const errorMessage = document.getElementById('error-message');
+    
+    const formData = {
+        email: form.email.value.trim(),
+        password: form.password.value,
+        confirmPassword: form.confirmPassword.value,
+        company: form.company.value.trim(),
+        department: form.department.value,
+        jobPosition: form.jobRole.value
+    };
+    
+    console.log('Form data:', formData);
+    
+    const errors = validateRegisterForm(formData);
+    
+    if (hasValidationErrors(errors)) {
+        showValidationErrors(errors, form);
+        return;
+    }
+    
+    try {
+        setLoading(submitBtn, true);
+        hideElement(errorBanner);
+        
+        console.log('Calling AuthAPI.register');
+        const response = await AuthAPI.register({
+            email: formData.email,
+            password: formData.password,
+            company: formData.company,
+            department: formData.department,
+            jobPosition: formData.jobPosition
+        });
+        
+        console.log('Register success:', response);
+        showNotification(MESSAGES.REGISTER_SUCCESS, 'success');
+        
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Register error:', error);
+        
+        if (errorMessage) {
+            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR;
+        }
+        showElement(errorBanner);
+        
+    } finally {
+        setLoading(submitBtn, false);
+    }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof initRegisterPage === 'function') {
-        initRegisterPage();
-    }
-});
+console.log('Register JS loaded');
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRegisterPage);
+} else {
+    initRegisterPage();
+}
