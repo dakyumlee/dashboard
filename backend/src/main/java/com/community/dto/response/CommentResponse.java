@@ -9,12 +9,12 @@ public class CommentResponse {
     private String authorNickname;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean isAuthor;
+    private Boolean isAuthor;
 
     public CommentResponse() {}
 
     public CommentResponse(Long id, String content, String authorNickname, 
-                          LocalDateTime createdAt, LocalDateTime updatedAt, boolean isAuthor) {
+                          LocalDateTime createdAt, LocalDateTime updatedAt, Boolean isAuthor) {
         this.id = id;
         this.content = content;
         this.authorNickname = authorNickname;
@@ -63,11 +63,11 @@ public class CommentResponse {
         this.updatedAt = updatedAt;
     }
 
-    public boolean isAuthor() {
+    public Boolean getIsAuthor() {
         return isAuthor;
     }
 
-    public void setAuthor(boolean author) {
-        isAuthor = author;
+    public void setIsAuthor(Boolean isAuthor) {
+        this.isAuthor = isAuthor;
     }
 }

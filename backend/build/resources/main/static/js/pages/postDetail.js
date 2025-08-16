@@ -2,11 +2,12 @@ let postId = null;
 let currentCommentsPage = 1;
 
 function initPostDetailPage() {
-    const urlParams = getURLParams();
-    postId = urlParams.id;
+    const urlParams = new URLSearchParams(window.location.search);
+    postId = urlParams.get('id');
     
     if (!postId) {
-        showError('게시글을 찾을 수 없습니다.');
+        alert('게시글을 찾을 수 없습니다.');
+        window.location.href = 'index.html';
         return;
     }
     
@@ -18,11 +19,6 @@ function setupEventListeners() {
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', () => loadPost());
-    }
-    
-    const deleteBtn = document.getElementById('delete-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', handleDeletePost);
     }
     
     const likeBtn = document.getElementById('like-btn');
@@ -43,18 +39,19 @@ async function loadPost() {
     const commentsSection = document.getElementById('comments-section');
     
     try {
-        showElement(loading);
-        hideElement(errorBanner);
+        if (loading) loading.style.display = 'block';
+        if (errorBanner) errorBanner.style.display = 'none';
         
-        const response = await PostAPI.getPost(postId);
+        const response = await APIClient.get(`/posts/${postId}`);
         
         renderPostDetail(response);
-        showElement(postDetail);
-        showElement(commentsSection);
+        if (postDetail) postDetail.style.display = 'block';
+        if (commentsSection) commentsSection.style.display = 'block';
         
-        if (Auth.isAuthenticated()) {
+        const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
+        if (user.email) {
             const commentForm = document.getElementById('comment-form');
-            showElement(commentForm);
+            if (commentForm) commentForm.style.display = 'block';
         }
         
         loadComments();
@@ -64,51 +61,40 @@ async function loadPost() {
         
         const errorMessage = document.getElementById('error-message');
         if (errorMessage) {
-            errorMessage.textContent = error.message || MESSAGES.SERVER_ERROR;
+            errorMessage.textContent = error.message || '게시글을 불러오는 중 오류가 발생했습니다.';
         }
         
-        showElement(errorBanner);
+        if (errorBanner) errorBanner.style.display = 'block';
         
     } finally {
-        hideElement(loading);
+        if (loading) loading.style.display = 'none';
     }
 }
 
 function renderPostDetail(post) {
-    document.getElementById('post-title').textContent = post.title;
-    document.getElementById('post-content').textContent = post.content;
-    document.getElementById('post-author').textContent = post.authorNickname;
-    document.getElementById('post-date').textContent = formatDateTime(post.createdAt);
+    const titleEl = document.getElementById('post-title');
+    const contentEl = document.getElementById('post-content');
+    const authorEl = document.getElementById('post-author');
+    const dateEl = document.getElementById('post-date');
+    const likeCountEl = document.getElementById('like-count');
     
-    const likeBtn = document.getElementById('like-btn');
-    const likeIcon = document.getElementById('like-icon');
-    const likeCount = document.getElementById('like-count');
-    
-    if (likeBtn && likeIcon && likeCount) {
-        likeBtn.className = post.isLiked ? 'like-btn liked' : 'like-btn';
-        likeIcon.textContent = post.isLiked ? '❤️' : '🤍';
-        likeCount.textContent = post.likeCount;
-    }
-    
-    const ownerActions = document.getElementById('post-owner-actions');
-    const editBtn = document.getElementById('edit-btn');
-    
-    if (post.isAuthor && ownerActions && editBtn) {
-        editBtn.href = `edit-post.html?id=${post.id}`;
-        showElement(ownerActions);
-    }
+    if (titleEl) titleEl.textContent = post.title || '제목 없음';
+    if (contentEl) contentEl.textContent = post.content || '내용 없음';
+    if (authorEl) authorEl.textContent = post.authorNickname || '익명';
+    if (dateEl) dateEl.textContent = new Date(post.createdAt).toLocaleString();
+    if (likeCountEl) likeCountEl.textContent = post.likeCount || 0;
 }
 
 async function loadComments() {
     try {
-        const response = await CommentAPI.getComments(postId, currentCommentsPage);
+        const response = await APIClient.get(`/posts/${postId}/comments`);
         
-        const commentCount = document.getElementById('comment-count');
-        if (commentCount) {
-            commentCount.textContent = response.totalElements || 0;
+        const commentCountEl = document.getElementById('comment-count');
+        if (commentCountEl) {
+            commentCountEl.textContent = response.length || 0;
         }
         
-        renderComments(response.comments || []);
+        renderComments(response || []);
         
     } catch (error) {
         console.error('Error loading comments:', error);
@@ -122,107 +108,78 @@ function renderComments(comments) {
     commentsList.innerHTML = '';
     
     comments.forEach(comment => {
-        const commentItem = createCommentItem(comment);
+        const commentItem = document.createElement('div');
+        commentItem.className = 'comment-item';
+        
+        commentItem.innerHTML = `
+            <div class="comment-meta">
+                <span class="comment-author">${comment.authorNickname || '익명'}</span>
+                <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+            </div>
+            <div class="comment-content">${comment.content || ''}</div>
+            ${comment.isAuthor ? `
+                <div class="comment-actions">
+                    <button class="btn btn-sm btn-danger" onclick="deleteComment(${comment.id})">삭제</button>
+                </div>
+            ` : ''}
+        `;
+        
         commentsList.appendChild(commentItem);
     });
-}
-
-function createCommentItem(comment) {
-    const div = document.createElement('div');
-    div.className = 'comment-item';
-    
-    div.innerHTML = `
-        <div class="comment-meta">
-            <span class="comment-author">${sanitizeHTML(comment.authorNickname)}</span>
-            <span class="comment-date">${formatDateTime(comment.createdAt)}</span>
-        </div>
-        <div class="comment-content">${sanitizeHTML(comment.content)}</div>
-        ${comment.isAuthor ? `
-            <div class="comment-actions">
-                <button class="btn btn-sm btn-danger" onclick="deleteComment(${comment.id})">삭제</button>
-            </div>
-        ` : ''}
-    `;
-    
-    return div;
-}
-
-async function handleToggleLike() {
-    if (!Auth.requireAuth()) return;
-    
-    try {
-        const response = await PostAPI.toggleLike(postId);
-        
-        const likeBtn = document.getElementById('like-btn');
-        const likeIcon = document.getElementById('like-icon');
-        const likeCount = document.getElementById('like-count');
-        
-        if (likeBtn && likeIcon && likeCount) {
-            likeBtn.className = response.isLiked ? 'like-btn liked' : 'like-btn';
-            likeIcon.textContent = response.isLiked ? '❤️' : '🤍';
-            likeCount.textContent = response.likeCount;
-        }
-        
-    } catch (error) {
-        console.error('Error toggling like:', error);
-        Auth.handleAuthError(error);
-    }
 }
 
 async function handleCreateComment(e) {
     e.preventDefault();
     
-    if (!Auth.requireAuth()) return;
-    
     const form = e.target;
+    const contentInput = form.querySelector('[name="content"]');
     const submitBtn = document.getElementById('comment-submit-btn');
-    const contentTextarea = document.getElementById('comment-content');
     
-    const content = contentTextarea.value.trim();
-    
-    if (!content) {
-        addInputError(contentTextarea, '댓글 내용을 입력해주세요');
+    if (!contentInput.value.trim()) {
+        alert('댓글 내용을 입력해주세요.');
         return;
     }
     
     try {
-        setLoading(submitBtn, true);
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '작성 중...';
+        }
         
-        await CommentAPI.createComment(postId, { content });
+        await APIClient.post(`/posts/${postId}/comments`, {
+            content: contentInput.value.trim()
+        });
         
-        showNotification(MESSAGES.COMMENT_CREATE_SUCCESS, 'success');
-        
-        form.reset();
-        removeInputError(contentTextarea);
-        
+        contentInput.value = '';
+        alert('댓글이 작성되었습니다!');
         loadComments();
         
     } catch (error) {
         console.error('Error creating comment:', error);
-        Auth.handleAuthError(error);
+        alert(error.message || '댓글 작성 중 오류가 발생했습니다.');
         
     } finally {
-        setLoading(submitBtn, false);
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '댓글 작성';
+        }
     }
 }
 
-async function handleDeletePost() {
-    if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+async function handleToggleLike() {
+    const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
+    if (!user.email) {
+        alert('로그인이 필요합니다.');
         return;
     }
     
     try {
-        await PostAPI.deletePost(postId);
-        
-        showNotification(MESSAGES.POST_DELETE_SUCCESS, 'success');
-        
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
+        await APIClient.post(`/posts/${postId}/like`);
+        loadPost();
         
     } catch (error) {
-        console.error('Error deleting post:', error);
-        Auth.handleAuthError(error);
+        console.error('Error toggling like:', error);
+        alert(error.message || '좋아요 처리 중 오류가 발생했습니다.');
     }
 }
 
@@ -232,15 +189,13 @@ async function deleteComment(commentId) {
     }
     
     try {
-        await CommentAPI.deleteComment(commentId);
-        
-        showNotification(MESSAGES.COMMENT_DELETE_SUCCESS, 'success');
-        
+        await APIClient.delete(`/comments/${commentId}`);
+        alert('댓글이 삭제되었습니다.');
         loadComments();
         
     } catch (error) {
         console.error('Error deleting comment:', error);
-        Auth.handleAuthError(error);
+        alert(error.message || '댓글 삭제 중 오류가 발생했습니다.');
     }
 }
 
